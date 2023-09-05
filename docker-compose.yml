@@ -1,0 +1,65 @@
+version: '3'
+services:
+  post-service-read:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - 4301:4301
+    depends_on:
+      - elasticDB-primary
+
+  elasticDB-primary:
+    image: elasticsearch:8.9.0
+    container_name: elasticDB-primary
+    volumes:
+      - ./data/elastic-primary:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+      - 9300:9300
+    environment:
+      - cluster.name=elasticsearch-primary
+      - node.name=node-1
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+      - xpack.security.enabled=false
+      - discovery.seed_hosts=127.0.0.1
+      - cluster.initial_master_nodes=node-1.node-2,node-3
+      - network.host=0.0.0.0
+
+  elasticDB-secondary:
+    image: elasticsearch:8.9.0
+    container_name: elasticDB-secondary
+    volumes:
+      - ./data/elastic-secondary:/usr/share/elasticsearch/data
+    depends_on:
+      - elasticDB-primary
+    environment:
+      - cluster.name=elasticsearch-secondary
+      - node.name=node-2
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+      - xpack.security.enabled=false
+      - discovery.seed_hosts=127.0.0.1
+      - cluster.initial_master_nodes=node-1.node-2,node-3
+      - network.host=0.0.0.0
+    ports:
+      - 9201:9200
+
+  elasticDB-tertiary:
+    image: elasticsearch:8.9.0
+    container_name: elasticDB-tertiary
+    volumes:
+      - ./data/elastic-tertiary:/usr/share/elasticsearch/data
+    depends_on:
+      - elasticDB-primary
+    environment:
+      - cluster.name=elasticsearch-tertiary
+      - node.name=node-3
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+      - xpack.security.enabled=false
+      - discovery.seed_hosts=127.0.0.1
+      - cluster.initial_master_nodes=node-1.node-2,node-3
+      - network.host=0.0.0.0
+    ports:
+      - 9202:9200
