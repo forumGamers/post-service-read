@@ -1,4 +1,4 @@
-package config
+package broker
 
 import (
 	"fmt"
@@ -8,7 +8,13 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-var Broker *amqp091.Connection
+type Consumer interface{}
+
+type ConsumerImpl struct {
+	Channel *amqp091.Channel
+}
+
+var Broker Consumer
 
 func BrokerConnection() {
 	rabbitMqServerUrl := os.Getenv("RABBITMQURL")
@@ -19,9 +25,15 @@ func BrokerConnection() {
 
 	conn, err := amqp091.Dial(rabbitMqServerUrl)
 	h.PanicIfError(err)
+
+	ch, err := conn.Channel()
+	h.PanicIfError(err)
+
+	notifyClose := conn.NotifyClose(make(chan *amqp091.Error))
+	go func() { <-notifyClose }()
+
+	Broker = &ConsumerImpl{
+		Channel: ch,
+	}
 	fmt.Println("connection to broker success")
-
-	defer conn.Close()
-
-	Broker = conn
 }

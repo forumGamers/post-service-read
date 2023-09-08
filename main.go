@@ -1,6 +1,7 @@
 package main
 
 import (
+	b "github.com/forumGamers/post-service-read/broker"
 	cfg "github.com/forumGamers/post-service-read/config"
 	h "github.com/forumGamers/post-service-read/helper"
 	r "github.com/forumGamers/post-service-read/routes"
@@ -11,7 +12,7 @@ func main() {
 	h.PanicIfError(godotenv.Load())
 
 	cfg.ElasticConnection()
-	cfg.BrokerConnection()
+	b.BrokerConnection()
 
 	r.NewRoutes()
 }
