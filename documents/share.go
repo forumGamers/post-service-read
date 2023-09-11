@@ -1,14 +1,14 @@
-package models
+package documents
 
 import (
 	"time"
 )
 
-type ReplyComment struct {
+type ShareDocument struct {
 	Id        string `json:"_id"`
 	UserId    string `json:"userId"`
+	PostId    string `json:"postId"`
 	Text      string `json:"text"`
-	CommentId string `json:"commentId"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

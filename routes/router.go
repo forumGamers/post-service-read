@@ -3,7 +3,7 @@ package routes
 import (
 	"os"
 
-	cfg "github.com/forumGamers/post-service-read/config"
+	db "github.com/forumGamers/post-service-read/database"
 	h "github.com/forumGamers/post-service-read/helper"
 	md "github.com/forumGamers/post-service-read/middlewares"
 	"github.com/gin-gonic/gin"
@@ -22,7 +22,7 @@ func NewRoutes() {
 	// groupRoutes := r.router.Group("/api")
 
 	r.router.GET("/ping", func(c *gin.Context) {
-		info, code, err := cfg.Ping()
+		info, code, err := db.Ping()
 
 		c.JSON(200, gin.H{
 			"Info":  info,

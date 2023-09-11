@@ -1,10 +1,10 @@
-package models
+package documents
 
 import (
 	"time"
 )
 
-type Like struct {
+type LikeDocument struct {
 	Id        string `json:"_id"`
 	UserId    string `json:"userId"`
 	PostId    string `json:"postId"`

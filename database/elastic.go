@@ -1,4 +1,4 @@
-package config
+package database
 
 import (
 	"context"
@@ -10,6 +10,10 @@ import (
 )
 
 var DB *elastic.Client
+
+const (
+	POSTINDEX = "post-service.post"
+)
 
 func getUrl() string {
 	url := os.Getenv("ELASTIC_URL")
@@ -31,4 +35,21 @@ func ElasticConnection() {
 
 func Ping() (*elastic.PingResult, int, error) {
 	return DB.Ping(getUrl()).Do(context.Background())
+}
+
+func CreateIndexes() {
+	for _, index := range []string{POSTINDEX} {
+		if exists, _ := DB.IndexExists(index).Do(context.Background()); !exists {
+			var schema string
+			switch index {
+			case POSTINDEX:
+				schema = PostMapping
+			default:
+				schema = ""
+			}
+			if created, err := DB.CreateIndex(index).BodyString(schema).Do(context.Background()); err != nil || !created.Acknowledged {
+				h.PanicIfError(h.InternalServer)
+			}
+		}
+	}
 }
