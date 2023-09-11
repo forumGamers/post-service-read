@@ -2,7 +2,7 @@ package database
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"os"
 
 	h "github.com/forumGamers/post-service-read/helper"
@@ -28,7 +28,7 @@ func ElasticConnection() {
 	client, err := elastic.NewClient(elastic.SetURL(getUrl()), elastic.SetSniff(false))
 	h.PanicIfError(err)
 
-	fmt.Println("database connection success")
+	log.Println("database connection success")
 
 	DB = client
 }

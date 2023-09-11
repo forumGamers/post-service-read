@@ -3,7 +3,7 @@ package broker
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"log"
 	"os"
 
 	doc "github.com/forumGamers/post-service-read/documents"
@@ -34,19 +34,50 @@ func BrokerConnection() {
 		rabbitMqServerUrl = "amqp://user:password@localhost:5672"
 	}
 
-	conn, err := amqp091.Dial(rabbitMqServerUrl)
+	conn, err := amqp091.DialConfig(rabbitMqServerUrl, amqp091.Config{
+		Heartbeat: 10,
+	})
 	h.PanicIfError(err)
 
 	ch, err := conn.Channel()
 	h.PanicIfError(err)
 
 	notifyClose := conn.NotifyClose(make(chan *amqp091.Error))
-	go func() { <-notifyClose }()
+	go func() {
+		retries := 0
+		for {
+			select {
+			case err := <-notifyClose:
+				if err != nil && retries < 10 {
+					newConn, newErr := amqp091.DialConfig(rabbitMqServerUrl, amqp091.Config{
+						Heartbeat: 10,
+					})
+					if newErr != nil {
+						log.Printf("Gagal melakukan koneksi ulang: %s", newErr)
+						continue
+					}
+
+					newCh, newErr := newConn.Channel()
+					if newErr != nil {
+						newConn.Close()
+						log.Printf("Gagal membuat channel baru: %s", newErr)
+						continue
+					}
+
+					Broker = &ConsumerImpl{
+						Channel: newCh,
+					}
+					notifyClose = conn.NotifyClose(make(chan *amqp091.Error))
+				}
+				break
+			}
+		}
+	}()
 
 	Broker = &ConsumerImpl{
 		Channel: ch,
 	}
-	fmt.Println("connection to broker success")
+	log.Println("connection to broker success")
 }
 
 func (b *ConsumerImpl) ConsumePostCreate() {
@@ -66,7 +97,7 @@ func (b *ConsumerImpl) ConsumePostCreate() {
 		var post doc.PostDocument
 
 		if err := json.Unmarshal(msg.Body, &post); err != nil {
-			fmt.Println(err.Error())
+			log.Println(err.Error())
 			continue
 		}
 		postService.Insert(context.Background(), post)
