@@ -5,7 +5,7 @@ import (
 )
 
 type LikeDocument struct {
-	Id        string `json:"_id"`
+	Id        string `json:"id"`
 	UserId    string `json:"userId"`
 	PostId    string `json:"postId"`
 	CreatedAt time.Time

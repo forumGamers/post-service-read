@@ -12,7 +12,11 @@ import (
 var DB *elastic.Client
 
 const (
-	POSTINDEX = "post-service.post"
+	POSTINDEX    = "post-service.post"
+	LIKEINDEX    = "post-service.like"
+	COMMENTINDEX = "post-service.comment"
+	REPLYINDEX   = "post-service.reply"
+	SHAREINDEX   = "post-service.share"
 )
 
 func getUrl() string {
@@ -38,12 +42,20 @@ func Ping() (*elastic.PingResult, int, error) {
 }
 
 func CreateIndexes() {
-	for _, index := range []string{POSTINDEX} {
+	for _, index := range []string{POSTINDEX, LIKEINDEX, COMMENTINDEX, REPLYINDEX, SHAREINDEX} {
 		if exists, _ := DB.IndexExists(index).Do(context.Background()); !exists {
 			var schema string
 			switch index {
 			case POSTINDEX:
 				schema = PostMapping
+			case LIKEINDEX:
+				schema = LikeMapping
+			case COMMENTINDEX:
+				schema = CommentMapping
+			case REPLYINDEX:
+				schema = ReplyMapping
+			case SHAREINDEX:
+				schema = ShareMapping
 			default:
 				schema = ""
 			}

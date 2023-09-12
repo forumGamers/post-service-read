@@ -5,7 +5,7 @@ import (
 )
 
 type ReplyCommentDocument struct {
-	Id        string `json:"_id"`
+	Id        string `json:"id"`
 	UserId    string `json:"userId"`
 	Text      string `json:"text"`
 	CommentId string `json:"commentId"`

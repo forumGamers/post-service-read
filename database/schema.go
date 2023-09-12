@@ -22,4 +22,101 @@ const (
 			}
 		}
 	}`
+
+	LikeMapping = `{
+		"mappings": {
+		  "properties": {
+			"id": {
+			  "type": "keyword"
+			},
+			"userId": {
+			  "type": "keyword"
+			},
+			"postId": {
+			  "type": "keyword"
+			},
+			"createdAt": {
+			  "type": "date"
+			},
+			"updatedAt": {
+			  "type": "date"
+			}
+		  }
+		}
+	  }`
+
+	CommentMapping = `{
+		"mappings": {
+		  "properties": {
+			"id": {
+			  "type": "keyword"
+			},
+			"userId": {
+			  "type": "keyword"
+			},
+			"text": {
+			  "type": "text"
+			},
+			"postId": {
+			  "type": "keyword"
+			},
+			"createdAt": {
+			  "type": "date"
+			},
+			"updatedAt": {
+			  "type": "date"
+			}
+		  }
+		}
+	  }`
+
+	ReplyMapping = `{
+		"mappings": {
+		  "properties": {
+			"id": {
+			  "type": "keyword"
+			},
+			"userId": {
+			  "type": "keyword"
+			},
+			"text": {
+			  "type": "text"
+			},
+			"commentId": {
+			  "type": "keyword"
+			},
+			"createdAt": {
+			  "type": "date"
+			},
+			"updatedAt": {
+			  "type": "date"
+			}
+		  }
+		}
+	  }`
+
+	ShareMapping = `{
+		"mappings": {
+		  "properties": {
+			"id": {
+			  "type": "keyword"
+			},
+			"userId": {
+			  "type": "keyword"
+			},
+			"postId": {
+			  "type": "keyword"
+			},
+			"text": {
+			  "type": "text"
+			},
+			"createdAt": {
+			  "type": "date"
+			},
+			"updatedAt": {
+			  "type": "date"
+			}
+		  }
+		}
+	  }`
 )
