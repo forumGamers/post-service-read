@@ -2,7 +2,9 @@ package main
 
 import (
 	b "github.com/forumGamers/post-service-read/broker"
+	"github.com/forumGamers/post-service-read/controllers"
 	db "github.com/forumGamers/post-service-read/database"
+	"github.com/forumGamers/post-service-read/documents"
 	h "github.com/forumGamers/post-service-read/helper"
 	r "github.com/forumGamers/post-service-read/routes"
 	"github.com/joho/godotenv"
@@ -15,7 +17,9 @@ func main() {
 	db.CreateIndexes()
 
 	b.BrokerConnection()
-	b.Broker.ConsumePostCreate()
+	go b.Broker.ConsumePostCreate()
 
-	r.NewRoutes()
+	postController := controllers.NewPostController(documents.NewPost())
+
+	r.NewRoutes(postController)
 }

@@ -5,7 +5,7 @@ import "fmt"
 var (
 	Forbidden      = fmt.Errorf("Forbidden")
 	InvalidToken   = fmt.Errorf("Invalid Token")
-	NotFount       = fmt.Errorf("Data not found")
+	NotFound       = fmt.Errorf("Data not found")
 	InternalServer = fmt.Errorf("Internal Server Error")
 	InvalidChiper  = fmt.Errorf("invalid ciphertext block size")
 	BadGateway     = fmt.Errorf("Bad Gateway")

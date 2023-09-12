@@ -3,6 +3,7 @@ package routes
 import (
 	"os"
 
+	"github.com/forumGamers/post-service-read/controllers"
 	db "github.com/forumGamers/post-service-read/database"
 	h "github.com/forumGamers/post-service-read/helper"
 	md "github.com/forumGamers/post-service-read/middlewares"
@@ -14,13 +15,15 @@ type routes struct {
 	router *gin.Engine
 }
 
-func NewRoutes() {
+func NewRoutes(post controllers.PostController) {
 	h.PanicIfError(godotenv.Load())
 
 	r := routes{router: gin.Default()}
 
-	// groupRoutes := r.router.Group("/api")
+	groupRoutes := r.router.Group("/api")
 
+	r.router.Use(md.CheckOrigin)
+	r.router.Use(md.Cors())
 	r.router.GET("/ping", func(c *gin.Context) {
 		info, code, err := db.Ping()
 
@@ -30,9 +33,7 @@ func NewRoutes() {
 			"Error": err,
 		})
 	})
-
-	r.router.Use(md.CheckOrigin)
-	r.router.Use(md.Cors())
+	r.postRoute(groupRoutes, post)
 
 	port := os.Getenv("PORT")
 

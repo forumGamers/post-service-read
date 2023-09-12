@@ -2,13 +2,16 @@ package documents
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/forumGamers/post-service-read/database"
+	h "github.com/forumGamers/post-service-read/helper"
 )
 
 type PostService interface {
 	Insert(ctx context.Context, data PostDocument) error
+	FindById(ctx context.Context, id string) (json.RawMessage, error)
 }
 
 type Media struct {
@@ -44,4 +47,17 @@ func (p *PostDocument) Insert(ctx context.Context, data PostDocument) error {
 
 func NewPost() PostService {
 	return &PostDocument{}
+}
+
+func (p *PostDocument) FindById(ctx context.Context, id string) (json.RawMessage, error) {
+	get, err := database.DB.Get().Index(database.POSTINDEX).Id(id).Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if !get.Found {
+		return nil, h.NotFound
+	}
+
+	return get.Source, nil
 }
