@@ -7,11 +7,13 @@ import (
 
 	"github.com/forumGamers/post-service-read/database"
 	h "github.com/forumGamers/post-service-read/helper"
+	"github.com/olivere/elastic/v7"
 )
 
 type PostService interface {
 	Insert(ctx context.Context, data PostDocument) error
 	FindById(ctx context.Context, id string) (json.RawMessage, error)
+	DeleteOneById(ctx context.Context, id string) error
 }
 
 type Media struct {
@@ -45,6 +47,20 @@ func (p *PostDocument) Insert(ctx context.Context, data PostDocument) error {
 	return nil
 }
 
+func (p *PostDocument) DeleteOneById(ctx context.Context, id string) error {
+	if _, err := database.DB.Delete().
+		Index(database.POSTINDEX).
+		Id(id).
+		Do(ctx); err != nil {
+		if elastic.IsNotFound(err) {
+			return h.NotFound
+		}
+		return err
+
+	}
+	return nil
+}
+
 func NewPost() PostService {
 	return &PostDocument{}
 }
@@ -52,11 +68,11 @@ func NewPost() PostService {
 func (p *PostDocument) FindById(ctx context.Context, id string) (json.RawMessage, error) {
 	get, err := database.DB.Get().Index(database.POSTINDEX).Id(id).Do(ctx)
 	if err != nil {
-		return nil, err
-	}
+		if elastic.IsNotFound(err) {
+			return nil, h.NotFound
+		}
 
-	if !get.Found {
-		return nil, h.NotFound
+		return nil, err
 	}
 
 	return get.Source, nil

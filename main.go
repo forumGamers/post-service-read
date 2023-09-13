@@ -17,9 +17,12 @@ func main() {
 	db.CreateIndexes()
 
 	b.BrokerConnection()
-	go b.Broker.ConsumePostCreate()
+	postService := documents.NewPost()
 
-	postController := controllers.NewPostController(documents.NewPost())
+	go b.Broker.ConsumePostDelete(postService)
+	go b.Broker.ConsumePostCreate(postService)
+
+	postController := controllers.NewPostController(postService)
 
 	r.NewRoutes(postController)
 }

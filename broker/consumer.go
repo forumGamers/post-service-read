@@ -18,7 +18,8 @@ const (
 )
 
 type Consumer interface {
-	ConsumePostCreate()
+	ConsumePostCreate(postService doc.PostService)
+	ConsumePostDelete(postService doc.PostService)
 }
 
 type ConsumerImpl struct {
@@ -80,7 +81,7 @@ func BrokerConnection() {
 	log.Println("connection to broker success")
 }
 
-func (b *ConsumerImpl) ConsumePostCreate() {
+func (b *ConsumerImpl) ConsumePostCreate(postService doc.PostService) {
 	msgs, err := b.Channel.Consume(
 		NEWPOSTQUEUE,
 		"",
@@ -91,7 +92,6 @@ func (b *ConsumerImpl) ConsumePostCreate() {
 		nil,
 	)
 	h.PanicIfError(err)
-	postService := doc.NewPost()
 
 	for msg := range msgs {
 		var post doc.PostDocument
@@ -100,6 +100,33 @@ func (b *ConsumerImpl) ConsumePostCreate() {
 			log.Println(err.Error())
 			continue
 		}
-		postService.Insert(context.Background(), post)
+		go func(msg amqp091.Delivery) {
+			postService.Insert(context.Background(), post)
+		}(msg)
+	}
+}
+
+func (b *ConsumerImpl) ConsumePostDelete(postService doc.PostService) {
+	msgs, err := b.Channel.Consume(
+		DELETEPOSTQUEUE,
+		"",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	h.PanicIfError(err)
+
+	for msg := range msgs {
+		var post doc.PostDocument
+
+		if err := json.Unmarshal(msg.Body, &post); err != nil {
+			log.Println(err.Error())
+			continue
+		}
+		go func(msg amqp091.Delivery) {
+			postService.DeleteOneById(context.Background(), post.Id)
+		}(msg)
 	}
 }
