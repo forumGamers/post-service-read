@@ -18,9 +18,12 @@ func main() {
 
 	b.BrokerConnection()
 	postService := documents.NewPost()
+	likeService := documents.NewLike()
 
-	go b.Broker.ConsumePostDelete(postService)
-	go b.Broker.ConsumePostCreate(postService)
+	b.ConsumeMessage(
+		postService,
+		likeService,
+	)
 
 	postController := controllers.NewPostController(postService)
 

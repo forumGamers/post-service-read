@@ -41,7 +41,6 @@ func (p *PostDocument) Insert(ctx context.Context, data PostDocument) error {
 		Id(data.Id).
 		BodyJson(data).
 		Do(ctx); err != nil {
-		println(err.Error())
 		return err
 	}
 	return nil

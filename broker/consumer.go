@@ -15,11 +15,15 @@ const (
 	POSTEXCHANGE    = "Post-Exchange"
 	NEWPOSTQUEUE    = "New-Post-Queue"
 	DELETEPOSTQUEUE = "Delete-Post-Queue"
+	LIKEEXCHANGE    = "Like-Exchange"
+	NEWLIKEQUEUE    = "New-Like-Queue"
+	DELETELIKEQUEUE = "Delete-Like-Queue"
 )
 
 type Consumer interface {
 	ConsumePostCreate(postService doc.PostService)
 	ConsumePostDelete(postService doc.PostService)
+	ConsumeLikeCreate(likeService doc.LikeService)
 }
 
 type ConsumerImpl struct {
@@ -129,4 +133,36 @@ func (b *ConsumerImpl) ConsumePostDelete(postService doc.PostService) {
 			postService.DeleteOneById(context.Background(), post.Id)
 		}(msg)
 	}
+}
+
+func (b *ConsumerImpl) ConsumeLikeCreate(likeService doc.LikeService) {
+	msgs, err := b.Channel.Consume(
+		NEWLIKEQUEUE,
+		"",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	h.PanicIfError(err)
+
+	for msg := range msgs {
+		var like doc.LikeDocument
+
+		if err := json.Unmarshal(msg.Body, &like); err != nil {
+			log.Println(err.Error())
+			continue
+		}
+		go func(msg amqp091.Delivery) {
+			likeService.Insert(context.Background(), like)
+		}(msg)
+	}
+}
+
+func ConsumeMessage(post doc.PostService, like doc.LikeService) {
+	go Broker.ConsumePostCreate(post)
+	go Broker.ConsumePostDelete(post)
+
+	go Broker.ConsumeLikeCreate(like)
 }
