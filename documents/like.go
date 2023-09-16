@@ -9,6 +9,7 @@ import (
 
 type LikeService interface {
 	Insert(ctx context.Context, data LikeDocument) error
+	DeleteOneById(ctx context.Context, id string) error
 }
 
 type LikeDocument struct {
@@ -24,13 +25,9 @@ func NewLike() LikeService {
 }
 
 func (l *LikeDocument) Insert(ctx context.Context, data LikeDocument) error {
-	if _, err := database.DB.
-		Index().
-		Index(database.LIKEINDEX).
-		Id(data.Id).
-		BodyJson(data).
-		Do(ctx); err != nil {
-		return err
-	}
-	return nil
+	return database.NewIndex(database.LIKEINDEX).InsertOne(ctx, data)
+}
+
+func (l *LikeDocument) DeleteOneById(ctx context.Context, id string) error {
+	return database.NewIndex(database.LIKEINDEX).DeleteOne(ctx, id)
 }

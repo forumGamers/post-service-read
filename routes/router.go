@@ -5,10 +5,8 @@ import (
 
 	"github.com/forumGamers/post-service-read/controllers"
 	db "github.com/forumGamers/post-service-read/database"
-	h "github.com/forumGamers/post-service-read/helper"
 	md "github.com/forumGamers/post-service-read/middlewares"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 type routes struct {
@@ -16,8 +14,6 @@ type routes struct {
 }
 
 func NewRoutes(post controllers.PostController) {
-	h.PanicIfError(godotenv.Load())
-
 	r := routes{router: gin.Default()}
 
 	groupRoutes := r.router.Group("/api")

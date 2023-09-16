@@ -35,29 +35,11 @@ type PostDocument struct {
 }
 
 func (p *PostDocument) Insert(ctx context.Context, data PostDocument) error {
-	if _, err := database.DB.
-		Index().
-		Index(database.POSTINDEX).
-		Id(data.Id).
-		BodyJson(data).
-		Do(ctx); err != nil {
-		return err
-	}
-	return nil
+	return database.NewIndex(database.POSTINDEX).InsertOne(ctx, data)
 }
 
 func (p *PostDocument) DeleteOneById(ctx context.Context, id string) error {
-	if _, err := database.DB.Delete().
-		Index(database.POSTINDEX).
-		Id(id).
-		Do(ctx); err != nil {
-		if elastic.IsNotFound(err) {
-			return h.NotFound
-		}
-		return err
-
-	}
-	return nil
+	return database.NewIndex(database.POSTINDEX).DeleteOne(ctx, id)
 }
 
 func NewPost() PostService {
