@@ -11,6 +11,7 @@ import (
 
 type PostController interface {
 	FindById(c *gin.Context)
+	PublicContent(c *gin.Context)
 }
 
 type PostControllerImpl struct {
@@ -43,4 +44,8 @@ func (p *PostControllerImpl) FindById(c *gin.Context) {
 		Message: "Success",
 		Data:    post,
 	})
+}
+
+func (p *PostControllerImpl) PublicContent(c *gin.Context) {
+	
 }

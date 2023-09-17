@@ -1,8 +1,6 @@
 package broker
 
 import (
-	"context"
-	"encoding/json"
 	"log"
 	"os"
 
@@ -16,6 +14,10 @@ type Consumer interface {
 	ConsumePostDelete(postService doc.PostService)
 	ConsumeLikeCreate(likeService doc.LikeService)
 	ConsumeLikeDelete(likeService doc.LikeService)
+	ConsumeCommentCreate(commentService doc.CommentService)
+	ConsumeCommentDelete(commentService doc.CommentService)
+	ConsumeReplyCreate(replyService doc.ReplyService)
+	ConsumeReplyDelete(replyService doc.ReplyService)
 }
 
 type ConsumerImpl struct {
@@ -77,98 +79,16 @@ func BrokerConnection() {
 	log.Println("connection to broker success")
 }
 
-func (b *ConsumerImpl) ConsumePostCreate(postService doc.PostService) {
-	msgs, err := b.Channel.Consume(
-		NEWPOSTQUEUE,
-		"",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
-	h.PanicIfError(err)
-
-	for msg := range msgs {
-		go func(msg amqp091.Delivery) {
-			var post doc.PostDocument
-
-			json.Unmarshal(msg.Body, &post)
-			postService.Insert(context.Background(), post)
-		}(msg)
-	}
-}
-
-func (b *ConsumerImpl) ConsumePostDelete(postService doc.PostService) {
-	msgs, err := b.Channel.Consume(
-		DELETEPOSTQUEUE,
-		"",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
-	h.PanicIfError(err)
-
-	for msg := range msgs {
-		go func(msg amqp091.Delivery) {
-			var post doc.PostDocument
-
-			json.Unmarshal(msg.Body, &post)
-			postService.DeleteOneById(context.Background(), post.Id)
-		}(msg)
-	}
-}
-
-func (b *ConsumerImpl) ConsumeLikeCreate(likeService doc.LikeService) {
-	msgs, err := b.Channel.Consume(
-		NEWLIKEQUEUE,
-		"",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
-	h.PanicIfError(err)
-
-	for msg := range msgs {
-		go func(msg amqp091.Delivery) {
-			var like doc.LikeDocument
-
-			json.Unmarshal(msg.Body, &like)
-			likeService.Insert(context.Background(), like)
-		}(msg)
-	}
-}
-
-func (b *ConsumerImpl) ConsumeLikeDelete(likeService doc.LikeService) {
-	msgs, err := b.Channel.Consume(
-		DELETELIKEQUEUE,
-		"",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
-	h.PanicIfError(err)
-
-	for msg := range msgs {
-		go func(msg amqp091.Delivery) {
-			var like doc.LikeDocument
-
-			json.Unmarshal(msg.Body, &like)
-			likeService.DeleteOneById(context.Background(), like.Id)
-		}(msg)
-	}
-}
-
-func ConsumeMessage(post doc.PostService, like doc.LikeService) {
+func ConsumeMessage(post doc.PostService, like doc.LikeService, comment doc.CommentService, replyService doc.ReplyService) {
 	go Broker.ConsumePostCreate(post)
 	go Broker.ConsumePostDelete(post)
 
 	go Broker.ConsumeLikeCreate(like)
 	go Broker.ConsumeLikeDelete(like)
+
+	go Broker.ConsumeCommentCreate(comment)
+	go Broker.ConsumeCommentDelete(comment)
+
+	go Broker.ConsumeReplyCreate(replyService)
+	go Broker.ConsumeReplyDelete(replyService)
 }

@@ -19,10 +19,14 @@ func main() {
 	b.BrokerConnection()
 	postService := documents.NewPost()
 	likeService := documents.NewLike()
+	commentService := documents.NewComment()
+	replyService := documents.NewReply()
 
 	b.ConsumeMessage(
 		postService,
 		likeService,
+		commentService,
+		replyService,
 	)
 
 	postController := controllers.NewPostController(postService)
