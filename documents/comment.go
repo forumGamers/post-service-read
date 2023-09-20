@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/forumGamers/post-service-read/database"
+	h "github.com/forumGamers/post-service-read/helper"
 	i "github.com/forumGamers/post-service-read/interfaces"
 )
 
@@ -36,11 +37,16 @@ func (c *CommentDocument) DeleteOneById(ctx context.Context, id string) error {
 }
 
 func (c *CommentDocument) CountComments(ctx context.Context, posts *[]i.PostResponse, ids ...any) error {
-	aggsResult, err := database.
+	aggs, err := database.
 		NewIndex(database.COMMENTINDEX).
-		CountDocuments(ctx, "postId", "comments_per_post", ids...)
+		CountDocuments("postId", "comments_per_post", ids...).Do(ctx)
 	if err != nil {
 		return err
+	}
+	//hitung reply nya juga
+	aggsResult, found := aggs.Aggregations.Terms("comments_per_post")
+	if !found {
+		return h.NotFound
 	}
 
 	for _, bucket := range aggsResult.Buckets {

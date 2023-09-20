@@ -2,9 +2,11 @@ package controllers
 
 import (
 	"context"
+	"sync"
 
 	doc "github.com/forumGamers/post-service-read/documents"
 	h "github.com/forumGamers/post-service-read/helper"
+	i "github.com/forumGamers/post-service-read/interfaces"
 	"github.com/forumGamers/post-service-read/web"
 	"github.com/gin-gonic/gin"
 )
@@ -58,13 +60,42 @@ func (p *PostControllerImpl) PublicContent(c *gin.Context) {
 		ids = append(ids, post.Id)
 	}
 
-	if err := doc.NewLike().CountLike(context.Background(), &posts, ids...); err != nil {
-		web.AbortHttp(c, err)
-		return
+	errCh := make(chan error)
+	var wg sync.WaitGroup
+	wg.Add(3)
+
+	go func(posts []i.PostResponse, ids ...any) {
+		defer wg.Done()
+		errCh <- doc.NewLike().CountLike(context.Background(), &posts, "", ids...)
+	}(posts, ids...)
+
+	go func(posts []i.PostResponse, ids ...any) {
+		defer wg.Done()
+		errCh <- doc.NewComment().CountComments(context.Background(), &posts, ids...)
+	}(posts, ids...)
+
+	go func(posts []i.PostResponse, ids ...any) {
+		defer wg.Done()
+		errCh <- doc.NewShare().CountShares(context.Background(), &posts, "", ids...)
+	}(posts, ids...)
+
+	var errors error
+	flag := false
+	for i := 0; i < 3; i++ {
+		select {
+		case err := <-errCh:
+			{
+				if err != nil && !flag {
+					flag = true
+					errors = err
+				}
+			}
+		}
 	}
 
-	if err := doc.NewComment().CountComments(context.Background(), &posts, ids...); err != nil {
-		web.AbortHttp(c, err)
+	wg.Wait()
+	if flag {
+		web.AbortHttp(c, errors)
 		return
 	}
 
