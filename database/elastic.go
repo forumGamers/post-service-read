@@ -65,3 +65,13 @@ func CreateIndexes() {
 		}
 	}
 }
+
+func CreateAliases() {
+	for _, indexName := range []string{POSTINDEX, LIKEINDEX, COMMENTINDEX} {
+		aliasName := "post_data"
+
+		if _, err := DB.Alias().Add(indexName, aliasName).Do(context.Background()); err != nil {
+			h.PanicIfError(err)
+		}
+	}
+}

@@ -15,6 +15,7 @@ func main() {
 
 	db.ElasticConnection()
 	db.CreateIndexes()
+	db.CreateAliases()
 
 	b.BrokerConnection()
 	postService := documents.NewPost()

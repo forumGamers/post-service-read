@@ -15,6 +15,7 @@ type Index struct {
 type Operations interface {
 	InsertOne(ctx context.Context, data any) error
 	DeleteOne(ctx context.Context, id string) error
+	CountDocuments(ctx context.Context, termsField, aggregationName string, ids ...any) (*elastic.AggregationBucketKeyItems, error)
 }
 
 func NewIndex(name string) Operations {
@@ -40,4 +41,22 @@ func (i *Index) DeleteOne(ctx context.Context, id string) error {
 		return err
 	}
 	return nil
+}
+
+func (i *Index) CountDocuments(ctx context.Context, termsField, aggregationName string, ids ...any) (*elastic.AggregationBucketKeyItems, error) {
+	result, err := DB.Search().
+		Index(i.Name).
+		Size(0).
+		Query(elastic.NewTermsQuery(termsField, ids...)).
+		Aggregation(aggregationName, elastic.NewTermsAggregation().Field(termsField)).
+		Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	aggsResult, found := result.Aggregations.Terms(aggregationName)
+	if !found {
+		return nil, h.NotFound
+	}
+	return aggsResult, nil
 }

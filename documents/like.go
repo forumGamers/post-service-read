@@ -5,11 +5,13 @@ import (
 	"time"
 
 	"github.com/forumGamers/post-service-read/database"
+	i "github.com/forumGamers/post-service-read/interfaces"
 )
 
 type LikeService interface {
 	Insert(ctx context.Context, data LikeDocument) error
 	DeleteOneById(ctx context.Context, id string) error
+	CountLike(ctx context.Context, posts *[]i.PostResponse, ids ...any) error
 }
 
 type LikeDocument struct {
@@ -30,4 +32,22 @@ func (l *LikeDocument) Insert(ctx context.Context, data LikeDocument) error {
 
 func (l *LikeDocument) DeleteOneById(ctx context.Context, id string) error {
 	return database.NewIndex(database.LIKEINDEX).DeleteOne(ctx, id)
+}
+
+func (l *LikeDocument) CountLike(ctx context.Context, posts *[]i.PostResponse, ids ...any) error {
+	aggsResult, err := database.
+		NewIndex(database.COMMENTINDEX).
+		CountDocuments(ctx, "postId", "likes_per_post", ids...)
+	if err != nil {
+		return err
+	}
+
+	for _, bucket := range aggsResult.Buckets {
+		for i := 0; i < len(*posts); i++ {
+			if (*posts)[i].Id == bucket.Key.(string) {
+				(*posts)[i].CountLike = int(bucket.DocCount)
+			}
+		}
+	}
+	return nil
 }
