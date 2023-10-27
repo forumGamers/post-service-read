@@ -16,6 +16,7 @@ type PostService interface {
 	FindById(ctx context.Context, id string) (json.RawMessage, error)
 	DeleteOneById(ctx context.Context, id string) error
 	GetPublicContent(ctx context.Context) ([]i.PostResponse, error)
+	BulkCreate(ctx context.Context, datas []PostDocument) error
 }
 
 type Media struct {
@@ -96,4 +97,26 @@ func (p *PostDocument) GetPublicContent(ctx context.Context) ([]i.PostResponse, 
 	}
 
 	return postResponses, nil
+}
+
+func (p *PostDocument) BulkCreate(ctx context.Context, datas []PostDocument) error {
+	bulkProcessor, _ := database.DB.BulkProcessor().
+		Name("bulk_post").
+		Workers(2).
+		BulkActions(len(datas)).
+		Do(ctx)
+
+	defer bulkProcessor.Close()
+
+	for _, data := range datas {
+		bulkProcessor.Add(
+			elastic.NewBulkIndexRequest().
+				Index(database.POSTINDEX).
+				Id(data.Id).
+				Doc(data),
+		)
+	}
+
+	bulkProcessor.Flush()
+	return nil
 }

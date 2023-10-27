@@ -12,6 +12,7 @@ import (
 type Consumer interface {
 	ConsumePostCreate(postService doc.PostService)
 	ConsumePostDelete(postService doc.PostService)
+	ConsumeBulkPost(postService doc.PostService)
 	ConsumeLikeCreate(likeService doc.LikeService)
 	ConsumeLikeDelete(likeService doc.LikeService)
 	ConsumeCommentCreate(commentService doc.CommentService)
@@ -82,6 +83,7 @@ func BrokerConnection() {
 func ConsumeMessage(post doc.PostService, like doc.LikeService, comment doc.CommentService, replyService doc.ReplyService) {
 	go Broker.ConsumePostCreate(post)
 	go Broker.ConsumePostDelete(post)
+	go Broker.ConsumeBulkPost(post)
 
 	go Broker.ConsumeLikeCreate(like)
 	go Broker.ConsumeLikeDelete(like)

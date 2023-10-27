@@ -184,3 +184,25 @@ func (b *ConsumerImpl) ConsumeReplyDelete(replyService doc.ReplyService) {
 		}(msg)
 	}
 }
+
+func (b *ConsumerImpl) ConsumeBulkPost(postService doc.PostService) {
+	msgs, err := b.Channel.Consume(
+		BULKPOSTQUEUE,
+		"",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	h.PanicIfError(err)
+
+	for msg := range msgs {
+		go func(msg amqp091.Delivery) {
+			var posts []doc.PostDocument
+
+			json.Unmarshal(msg.Body, &posts)
+			postService.BulkCreate(context.Background(), posts)
+		}(msg)
+	}
+}
