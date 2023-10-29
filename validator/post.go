@@ -2,14 +2,13 @@ package validator
 
 import (
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/forumGamers/post-service-read/web"
 )
 
 const (
-	regexID = `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`
+	RegexID = `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`
 )
 
 func ValidatePaginations(query *web.PostParams) {
@@ -30,7 +29,7 @@ func ValidateUserId(query *web.PostParams) {
 
 	for _, val := range strings.Split(query.UserIds[0], ",") {
 		if !contains(ids, val) &&
-			regexp.MustCompile(regexID).MatchString(val) &&
+			regexp.MustCompile(RegexID).MatchString(val) &&
 			val != "" {
 			ids = append(ids, val)
 		}
@@ -57,12 +56,7 @@ func ParsePageQuery(query *web.PostParams) {
 	if query.Page == nil {
 		return
 	}
-
-	partStr, ok := query.Page[0].(string)
-	if !ok {
-		query.Page = nil
-		return
-	}
+	partStr := query.Page[0]
 
 	parts := strings.Split(partStr, ",")
 	if len(parts) < 2 {
@@ -70,11 +64,5 @@ func ParsePageQuery(query *web.PostParams) {
 		return
 	}
 
-	timeStamp, err := strconv.ParseInt(parts[0], 10, 64)
-	if err != nil {
-		query.Page = nil
-		return
-	}
-
-	query.Page = []any{timeStamp, parts[1]}
+	query.Page = parts
 }

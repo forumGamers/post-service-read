@@ -3,11 +3,14 @@ package documents
 import (
 	"context"
 	"encoding/json"
+	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/forumGamers/post-service-read/database"
 	h "github.com/forumGamers/post-service-read/helper"
 	i "github.com/forumGamers/post-service-read/interfaces"
+	v "github.com/forumGamers/post-service-read/validator"
 	"github.com/forumGamers/post-service-read/web"
 	"github.com/olivere/elastic/v7"
 )
@@ -89,7 +92,12 @@ func (p *PostDocument) GetPublicContent(ctx context.Context, query web.PostParam
 	search.Query(boolQuery)
 
 	if query.Page != nil {
-		search.SearchAfter(query.Page...)
+		var sa []any
+		timeStamp, err := strconv.ParseInt(query.Page[0], 10, 64)
+		if err != nil && regexp.MustCompile(v.RegexID).MatchString(query.Page[1]) {
+			sa = append(sa, timeStamp, query.Page[1])
+			search.SearchAfter(sa...)
+		}
 	}
 
 	result, err := search.Do(context.Background())
