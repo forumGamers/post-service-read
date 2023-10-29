@@ -13,6 +13,13 @@ type WebResponse struct {
 	Data    any    `json:"data"`
 }
 
+type MetaData struct {
+	Total    int
+	Page     []any
+	Limit    int
+	Relation string
+}
+
 type HttpError struct {
 	Error   error
 	Code    int
@@ -173,5 +180,19 @@ func HttpValidationErr(c *gin.Context, err error) {
 		Status: getStatusMessage(400),
 		Code:   400,
 		Data:   errMap,
+	})
+}
+
+func WriteResponseWithMetadata(c *gin.Context, response WebResponse, metadata MetaData) {
+	response.Status = getStatusMessage(response.Code)
+	c.JSON(response.Code, gin.H{
+		"total":    metadata.Total,
+		"page":     metadata.Page,
+		"limit":    metadata.Limit,
+		"relation": metadata.Relation,
+		"status":   response.Status,
+		"code":     response.Code,
+		"message":  response.Message,
+		"data":     response.Data,
 	})
 }

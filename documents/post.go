@@ -8,6 +8,7 @@ import (
 	"github.com/forumGamers/post-service-read/database"
 	h "github.com/forumGamers/post-service-read/helper"
 	i "github.com/forumGamers/post-service-read/interfaces"
+	"github.com/forumGamers/post-service-read/web"
 	"github.com/olivere/elastic/v7"
 )
 
@@ -15,7 +16,10 @@ type PostService interface {
 	Insert(ctx context.Context, data PostDocument) error
 	FindById(ctx context.Context, id string) (json.RawMessage, error)
 	DeleteOneById(ctx context.Context, id string) error
-	GetPublicContent(ctx context.Context) ([]i.PostResponse, error)
+	GetPublicContent(ctx context.Context, query web.PostParams) ([]i.PostResponse, struct {
+		Total    int
+		Relation string
+	}, error)
 	BulkCreate(ctx context.Context, datas []PostDocument) error
 }
 
@@ -62,41 +66,64 @@ func (p *PostDocument) FindById(ctx context.Context, id string) (json.RawMessage
 	return get.Source, nil
 }
 
-func (p *PostDocument) GetPublicContent(ctx context.Context) ([]i.PostResponse, error) {
-	result, err := database.DB.Search().
+func (p *PostDocument) GetPublicContent(ctx context.Context, query web.PostParams) ([]i.PostResponse, struct {
+	Total    int
+	Relation string
+}, error) {
+	search := database.DB.Search().
 		Index(database.POSTINDEX).
-		Query(elastic.NewMatchAllQuery()).
-		Size(25).Sort("createdAt", false).
-		Do(context.Background())
-	if err != nil {
-		return nil, err
+		Size(query.Limit).
+		Sort("CreatedAt", false).
+		Sort("id", false)
+
+	boolQuery := elastic.NewBoolQuery()
+	boolQuery.Must(elastic.NewRangeQuery("CreatedAt").Gte("now-3d/d").Lte("now/d"))
+
+	if len(query.UserIds) > 0 {
+		var ids []any
+		for _, val := range query.UserIds {
+			ids = append(ids, val)
+		}
+		boolQuery.Must(elastic.NewTermsQuery("userId", ids...))
+	}
+	search.Query(boolQuery)
+
+	if query.Page != nil {
+		search.SearchAfter(query.Page...)
 	}
 
-	var posts []PostDocument
+	result, err := search.Do(context.Background())
+	if err != nil {
+		return nil, struct {
+			Total    int
+			Relation string
+		}{}, err
+	}
+
+	var postResponses []i.PostResponse
 	if result.Hits.TotalHits.Value > 0 {
 		for _, hit := range result.Hits.Hits {
 			var post PostDocument
 			json.Unmarshal(hit.Source, &post)
-			posts = append(posts, post)
+			postResponses = append(postResponses, i.PostResponse{
+				Id:           post.Id,
+				UserId:       post.UserId,
+				Text:         post.Text,
+				Media:        i.Media(post.Media),
+				AllowComment: post.AllowComment,
+				CreatedAt:    post.CreatedAt,
+				UpdatedAt:    post.UpdatedAt,
+				Tags:         post.Tags,
+				Privacy:      post.Privacy,
+				SearchAfter:  hit.Sort,
+			})
 		}
 	}
 
-	var postResponses []i.PostResponse
-	for _, post := range posts {
-		postResponses = append(postResponses, i.PostResponse{
-			Id:           post.Id,
-			UserId:       post.UserId,
-			Text:         post.Text,
-			Media:        i.Media(post.Media),
-			AllowComment: post.AllowComment,
-			CreatedAt:    post.CreatedAt,
-			UpdatedAt:    post.UpdatedAt,
-			Tags:         post.Tags,
-			Privacy:      post.Privacy,
-		})
-	}
-
-	return postResponses, nil
+	return postResponses, struct {
+		Total    int
+		Relation string
+	}{int(result.Hits.TotalHits.Value), result.Hits.TotalHits.Relation}, nil
 }
 
 func (p *PostDocument) BulkCreate(ctx context.Context, datas []PostDocument) error {

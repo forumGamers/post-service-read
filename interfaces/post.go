@@ -25,4 +25,5 @@ type PostResponse struct {
 	IsShared     bool     `json:"isShared"`
 	Tags         []string `json:"tags"`
 	Privacy      string   `json:"privacy"`
+	SearchAfter  []any    `json:"searchAfter"`
 }

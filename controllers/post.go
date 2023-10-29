@@ -7,6 +7,7 @@ import (
 	doc "github.com/forumGamers/post-service-read/documents"
 	h "github.com/forumGamers/post-service-read/helper"
 	i "github.com/forumGamers/post-service-read/interfaces"
+	v "github.com/forumGamers/post-service-read/validator"
 	"github.com/forumGamers/post-service-read/web"
 	"github.com/gin-gonic/gin"
 )
@@ -49,7 +50,11 @@ func (p *PostControllerImpl) FindById(c *gin.Context) {
 }
 
 func (p *PostControllerImpl) PublicContent(c *gin.Context) {
-	posts, err := p.Document.GetPublicContent(context.Background())
+	var query web.PostParams
+	c.ShouldBindQuery(&query)
+	v.ValidatePostQuery(&query)
+
+	posts, total, err := p.Document.GetPublicContent(context.Background(), query)
 	if err != nil {
 		web.AbortHttp(c, err)
 		return
@@ -103,9 +108,14 @@ func (p *PostControllerImpl) PublicContent(c *gin.Context) {
 		posts[i].Text = h.Decryption(posts[i].Text)
 	}
 
-	web.WriteResponse(c, web.WebResponse{
+	web.WriteResponseWithMetadata(c, web.WebResponse{
 		Code:    200,
 		Message: "OK",
 		Data:    posts,
+	}, web.MetaData{
+		Limit:    query.Limit,
+		Relation: total.Relation,
+		Total:    total.Total,
+		Page:     posts[len(posts)-1].SearchAfter,
 	})
 }
