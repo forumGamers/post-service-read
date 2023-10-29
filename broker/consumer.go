@@ -15,6 +15,7 @@ type Consumer interface {
 	ConsumeBulkPost(postService doc.PostService)
 	ConsumeLikeCreate(likeService doc.LikeService)
 	ConsumeLikeDelete(likeService doc.LikeService)
+	ConsumeBulkLike(likeService doc.LikeService)
 	ConsumeCommentCreate(commentService doc.CommentService)
 	ConsumeCommentDelete(commentService doc.CommentService)
 	ConsumeReplyCreate(replyService doc.ReplyService)
@@ -87,6 +88,7 @@ func ConsumeMessage(post doc.PostService, like doc.LikeService, comment doc.Comm
 
 	go Broker.ConsumeLikeCreate(like)
 	go Broker.ConsumeLikeDelete(like)
+	go Broker.ConsumeBulkLike(like)
 
 	go Broker.ConsumeCommentCreate(comment)
 	go Broker.ConsumeCommentDelete(comment)

@@ -206,3 +206,25 @@ func (b *ConsumerImpl) ConsumeBulkPost(postService doc.PostService) {
 		}(msg)
 	}
 }
+
+func (b *ConsumerImpl) ConsumeBulkLike(likeService doc.LikeService) {
+	msgs, err := b.Channel.Consume(
+		BULKLIKEQUEUE,
+		"",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	h.PanicIfError(err)
+
+	for msg := range msgs {
+		go func(msg amqp091.Delivery) {
+			var likes []doc.LikeDocument
+
+			json.Unmarshal(msg.Body, &likes)
+			likeService.BulkCreate(context.Background(), likes)
+		}(msg)
+	}
+}

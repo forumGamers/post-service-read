@@ -15,6 +15,7 @@ type LikeService interface {
 	Insert(ctx context.Context, data LikeDocument) error
 	DeleteOneById(ctx context.Context, id string) error
 	CountLike(ctx context.Context, posts *[]i.PostResponse, userId string, ids ...any) error
+	BulkCreate(ctx context.Context, datas []LikeDocument) error
 }
 
 type LikeDocument struct {
@@ -99,5 +100,27 @@ func (l *LikeDocument) CountLike(ctx context.Context, posts *[]i.PostResponse, u
 	}(posts)
 
 	wg.Wait()
+	return nil
+}
+
+func (l *LikeDocument) BulkCreate(ctx context.Context, datas []LikeDocument) error {
+	bulkProcessor, _ := database.DB.BulkProcessor().
+		Name("bulk_like").
+		Workers(2).
+		BulkActions(len(datas)).
+		Do(ctx)
+
+	defer bulkProcessor.Close()
+
+	for _, data := range datas {
+		bulkProcessor.Add(
+			elastic.NewBulkIndexRequest().
+				Index(database.LIKEINDEX).
+				Id(data.Id).
+				Doc(data),
+		)
+	}
+
+	bulkProcessor.Flush()
 	return nil
 }
