@@ -19,7 +19,7 @@ func ValidatePaginations(query *web.PostParams) {
 
 func ValidateUserId(query *web.PostParams) {
 	var ids []string
-	if query.UserIds[0] == "" {
+	if query.Page == nil || query.UserIds[0] == "" {
 		return
 	}
 
@@ -53,7 +53,7 @@ func contains(arr []string, val string) bool {
 }
 
 func ParsePageQuery(query *web.PostParams) {
-	if query.Page == nil {
+	if query.Page == nil || len(query.Page) < 1 {
 		return
 	}
 	partStr := query.Page[0]

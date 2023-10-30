@@ -16,7 +16,7 @@ type routes struct {
 func NewRoutes(post controllers.PostController) {
 	r := routes{router: gin.Default()}
 
-	groupRoutes := r.router.Group("/api")
+	groupRoutes := r.router.Group("/api/v1")
 
 	r.router.Use(md.CheckOrigin)
 	r.router.Use(md.Cors())
