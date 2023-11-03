@@ -115,6 +115,10 @@ func getErrorMsg(err error) (string, int) {
 		return h.InvalidToken.Error(), 401
 	case h.AccessDenied.Error():
 		return h.AccessDenied.Error(), 401
+	case h.TimeOut.Error():
+		return h.TimeOut.Error(), 408
+	case h.Limit.Error():
+		return h.Limit.Error(), 429
 	default:
 		return "Internal Server Error", 500
 	}

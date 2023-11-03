@@ -3,14 +3,12 @@ package documents
 import (
 	"context"
 	"encoding/json"
-	"regexp"
 	"strconv"
 	"time"
 
 	"github.com/forumGamers/post-service-read/database"
 	h "github.com/forumGamers/post-service-read/helper"
 	i "github.com/forumGamers/post-service-read/interfaces"
-	v "github.com/forumGamers/post-service-read/validator"
 	"github.com/forumGamers/post-service-read/web"
 	"github.com/olivere/elastic/v7"
 )
@@ -91,14 +89,14 @@ func (p *PostDocument) GetPublicContent(ctx context.Context, query web.PostParam
 	}
 	search.Query(boolQuery)
 
-	if query.Page != nil {
+	if len(query.Page) > 0 || query.Page != nil {
 		var sa []any
-		timeStamp, err := strconv.ParseInt(query.Page[0], 10, 64)
-		if err != nil && regexp.MustCompile(v.RegexID).MatchString(query.Page[1]) {
+		if timeStamp, err := strconv.ParseInt(query.Page[0], 10, 64); err == nil {
 			sa = append(sa, timeStamp, query.Page[1])
 			search.SearchAfter(sa...)
 		}
 	}
+	search.Timeout("30s")
 
 	result, err := search.Do(context.Background())
 	if err != nil {
@@ -126,6 +124,13 @@ func (p *PostDocument) GetPublicContent(ctx context.Context, query web.PostParam
 				SearchAfter:  hit.Sort,
 			})
 		}
+	}
+
+	if len(postResponses) < 1 {
+		return postResponses, struct {
+			Total    int
+			Relation string
+		}{0, "eq"}, &elastic.Error{Status: 404}
 	}
 
 	return postResponses, struct {

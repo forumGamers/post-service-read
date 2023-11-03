@@ -55,7 +55,7 @@ services:
       - cluster.initial_master_nodes=node-1,node-2,node-3
       - network.host=0.0.0.0
     ports:
-      - 9202:9200
+      - 9203:9200
     networks:
       - db-network
 

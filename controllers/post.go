@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"sync"
+	"time"
 
 	doc "github.com/forumGamers/post-service-read/documents"
 	h "github.com/forumGamers/post-service-read/helper"
@@ -56,7 +57,7 @@ func (p *PostControllerImpl) PublicContent(c *gin.Context) {
 
 	posts, total, err := p.Document.GetPublicContent(context.Background(), query)
 	if err != nil {
-		web.AbortHttp(c, err)
+		web.AbortHttp(c, h.ElasticError(err))
 		return
 	}
 
@@ -66,12 +67,13 @@ func (p *PostControllerImpl) PublicContent(c *gin.Context) {
 	}
 
 	errCh := make(chan error)
+	uuid := doc.GetUser(c).UUID
 	var wg sync.WaitGroup
 	wg.Add(3)
 
 	go func(posts []i.PostResponse, ids ...any) {
 		defer wg.Done()
-		errCh <- doc.NewLike().CountLike(context.Background(), &posts, "", ids...)
+		errCh <- doc.NewLike().CountLike(context.Background(), &posts, uuid, ids...)
 	}(posts, ids...)
 
 	go func(posts []i.PostResponse, ids ...any) {
@@ -81,7 +83,8 @@ func (p *PostControllerImpl) PublicContent(c *gin.Context) {
 
 	go func(posts []i.PostResponse, ids ...any) {
 		defer wg.Done()
-		errCh <- doc.NewShare().CountShares(context.Background(), &posts, "", ids...)
+		time.Sleep(50 * time.Millisecond) //agar ga error 429
+		errCh <- doc.NewShare().CountShares(context.Background(), &posts, uuid, ids...)
 	}(posts, ids...)
 
 	var errors error
@@ -100,7 +103,7 @@ func (p *PostControllerImpl) PublicContent(c *gin.Context) {
 
 	wg.Wait()
 	if flag {
-		web.AbortHttp(c, errors)
+		web.AbortHttp(c, h.ElasticError(errors))
 		return
 	}
 
