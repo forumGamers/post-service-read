@@ -7,12 +7,14 @@ import (
 	"github.com/forumGamers/post-service-read/database"
 	h "github.com/forumGamers/post-service-read/helper"
 	i "github.com/forumGamers/post-service-read/interfaces"
+	"github.com/olivere/elastic/v7"
 )
 
 type CommentService interface {
 	Insert(ctx context.Context, data CommentDocument) error
 	DeleteOneById(ctx context.Context, id string) error
 	CountComments(ctx context.Context, posts *[]i.PostResponse, ids ...any) error
+	BulkCreate(ctx context.Context, datas []CommentDocument) error
 }
 
 type CommentDocument struct {
@@ -56,5 +58,27 @@ func (c *CommentDocument) CountComments(ctx context.Context, posts *[]i.PostResp
 			}
 		}
 	}
+	return nil
+}
+
+func (c *CommentDocument) BulkCreate(ctx context.Context, datas []CommentDocument) error {
+	bulkProcessor, _ := database.DB.BulkProcessor().
+		Name("bulk_comment").
+		Workers(2).
+		BulkActions(len(datas)).
+		Do(ctx)
+
+	defer bulkProcessor.Close()
+
+	for _, data := range datas {
+		bulkProcessor.Add(
+			elastic.NewBulkIndexRequest().
+				Index(database.COMMENTINDEX).
+				Id(data.Id).
+				Doc(data),
+		)
+	}
+
+	bulkProcessor.Flush()
 	return nil
 }

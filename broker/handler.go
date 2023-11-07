@@ -141,6 +141,28 @@ func (b *ConsumerImpl) ConsumeCommentDelete(commentService doc.CommentService) {
 	}
 }
 
+func (b *ConsumerImpl) ConsumeBulkComment(commentService doc.CommentService) {
+	msgs, err := b.Channel.Consume(
+		BULKCOMMENTQUEUE,
+		"",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	h.PanicIfError(err)
+
+	for msg := range msgs {
+		go func(msg amqp091.Delivery) {
+			var comments []doc.CommentDocument
+
+			json.Unmarshal(msg.Body, &comments)
+			commentService.BulkCreate(context.Background(), comments)
+		}(msg)
+	}
+}
+
 func (b *ConsumerImpl) ConsumeReplyCreate(replyService doc.ReplyService) {
 	msgs, err := b.Channel.Consume(
 		NEWREPLYQUEUE,

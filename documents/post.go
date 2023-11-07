@@ -78,7 +78,7 @@ func (p *PostDocument) GetPublicContent(ctx context.Context, query web.PostParam
 		Sort("id", false)
 
 	boolQuery := elastic.NewBoolQuery()
-	boolQuery.Must(elastic.NewRangeQuery("CreatedAt").Gte("now-3d/d").Lte("now/d"))
+	boolQuery.Must(elastic.NewRangeQuery("CreatedAt").Gte("now-7d/d").Lte("now/d"))
 
 	if len(query.UserIds) > 0 {
 		var ids []any

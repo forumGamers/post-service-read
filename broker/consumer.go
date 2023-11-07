@@ -18,6 +18,7 @@ type Consumer interface {
 	ConsumeBulkLike(likeService doc.LikeService)
 	ConsumeCommentCreate(commentService doc.CommentService)
 	ConsumeCommentDelete(commentService doc.CommentService)
+	ConsumeBulkComment(commentService doc.CommentService)
 	ConsumeReplyCreate(replyService doc.ReplyService)
 	ConsumeReplyDelete(replyService doc.ReplyService)
 }
@@ -82,6 +83,7 @@ func BrokerConnection() {
 }
 
 func ConsumeMessage(post doc.PostService, like doc.LikeService, comment doc.CommentService, replyService doc.ReplyService) {
+	//kirim otentikasi header
 	go Broker.ConsumePostCreate(post)
 	go Broker.ConsumePostDelete(post)
 	go Broker.ConsumeBulkPost(post)
@@ -92,6 +94,7 @@ func ConsumeMessage(post doc.PostService, like doc.LikeService, comment doc.Comm
 
 	go Broker.ConsumeCommentCreate(comment)
 	go Broker.ConsumeCommentDelete(comment)
+	go Broker.ConsumeBulkComment(comment)
 
 	go Broker.ConsumeReplyCreate(replyService)
 	go Broker.ConsumeReplyDelete(replyService)
