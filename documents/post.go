@@ -17,10 +17,7 @@ type PostService interface {
 	Insert(ctx context.Context, data PostDocument) error
 	FindById(ctx context.Context, id string) (json.RawMessage, error)
 	DeleteOneById(ctx context.Context, id string) error
-	GetPublicContent(ctx context.Context, query web.PostParams) ([]i.PostResponse, struct {
-		Total    int
-		Relation string
-	}, error)
+	GetPublicContent(ctx context.Context, query web.PostParams) ([]i.PostResponse, i.TotalData, error)
 	BulkCreate(ctx context.Context, datas []PostDocument) error
 }
 
@@ -67,10 +64,7 @@ func (p *PostDocument) FindById(ctx context.Context, id string) (json.RawMessage
 	return get.Source, nil
 }
 
-func (p *PostDocument) GetPublicContent(ctx context.Context, query web.PostParams) ([]i.PostResponse, struct {
-	Total    int
-	Relation string
-}, error) {
+func (p *PostDocument) GetPublicContent(ctx context.Context, query web.PostParams) ([]i.PostResponse, i.TotalData, error) {
 	search := database.DB.Search().
 		Index(database.POSTINDEX).
 		Size(query.Limit).
@@ -114,7 +108,7 @@ func (p *PostDocument) GetPublicContent(ctx context.Context, query web.PostParam
 			postResponses = append(postResponses, i.PostResponse{
 				Id:           post.Id,
 				UserId:       post.UserId,
-				Text:         post.Text,
+				Text:         h.Decryption(post.Text),
 				Media:        i.Media(post.Media),
 				AllowComment: post.AllowComment,
 				CreatedAt:    post.CreatedAt,
@@ -127,16 +121,10 @@ func (p *PostDocument) GetPublicContent(ctx context.Context, query web.PostParam
 	}
 
 	if len(postResponses) < 1 {
-		return postResponses, struct {
-			Total    int
-			Relation string
-		}{0, "eq"}, &elastic.Error{Status: 404}
+		return postResponses, i.TotalData{Total: 0, Relation: "eq"}, &elastic.Error{Status: 404}
 	}
 
-	return postResponses, struct {
-		Total    int
-		Relation string
-	}{int(result.Hits.TotalHits.Value), result.Hits.TotalHits.Relation}, nil
+	return postResponses, i.TotalData{Total: int(result.Hits.TotalHits.Value), Relation: result.Hits.TotalHits.Relation}, nil
 }
 
 func (p *PostDocument) BulkCreate(ctx context.Context, datas []PostDocument) error {

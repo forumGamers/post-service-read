@@ -13,7 +13,7 @@ type routes struct {
 	router *gin.Engine
 }
 
-func NewRoutes(post controllers.PostController) {
+func NewRoutes(post controllers.PostController, comment controllers.CommentController) {
 	r := routes{router: gin.Default()}
 
 	groupRoutes := r.router.Group("/api/v1")
@@ -30,6 +30,7 @@ func NewRoutes(post controllers.PostController) {
 		})
 	})
 	r.postRoute(groupRoutes, post)
+	r.commentRoutes(groupRoutes, comment)
 
 	port := os.Getenv("PORT")
 

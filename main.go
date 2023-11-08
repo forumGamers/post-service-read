@@ -30,7 +30,8 @@ func main() {
 		replyService,
 	)
 
-	postController := controllers.NewPostController(postService)
-
-	r.NewRoutes(postController)
+	r.NewRoutes(
+		controllers.NewPostController(postService),
+		controllers.NewCommentController(commentService),
+	)
 }

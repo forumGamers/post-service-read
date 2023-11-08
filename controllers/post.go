@@ -107,10 +107,6 @@ func (p *PostControllerImpl) PublicContent(c *gin.Context) {
 		return
 	}
 
-	for i := 0; i < len(posts); i++ {
-		posts[i].Text = h.Decryption(posts[i].Text)
-	}
-
 	web.WriteResponseWithMetadata(c, web.WebResponse{
 		Code:    200,
 		Message: "OK",

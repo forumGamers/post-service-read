@@ -2,6 +2,7 @@ package documents
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/forumGamers/post-service-read/database"
@@ -15,6 +16,7 @@ type CommentService interface {
 	DeleteOneById(ctx context.Context, id string) error
 	CountComments(ctx context.Context, posts *[]i.PostResponse, ids ...any) error
 	BulkCreate(ctx context.Context, datas []CommentDocument) error
+	FindCommentByPostId(ctx context.Context, id string) ([]i.CommentResponse, i.TotalData, error)
 }
 
 type CommentDocument struct {
@@ -81,4 +83,40 @@ func (c *CommentDocument) BulkCreate(ctx context.Context, datas []CommentDocumen
 
 	bulkProcessor.Flush()
 	return nil
+}
+
+func (c *CommentDocument) FindCommentByPostId(ctx context.Context, id string) ([]i.CommentResponse, i.TotalData, error) {
+	result, err := database.DB.Search().
+		Index(database.COMMENTINDEX).
+		Query(elastic.NewMatchQuery("postId", id)).
+		Sort("CreatedAt", false).
+		Sort("id", false).
+		Size(10).
+		Do(ctx)
+
+	if err != nil {
+		return nil, i.TotalData{}, err
+	}
+
+	var comments []i.CommentResponse
+	if result.Hits.TotalHits.Value > 0 {
+		for _, hit := range result.Hits.Hits {
+			var comment CommentDocument
+			json.Unmarshal(hit.Source, &comment)
+			comments = append(comments, i.CommentResponse{
+				Id:          comment.Id,
+				UserId:      comment.UserId,
+				Text:        h.Decryption(comment.Text),
+				CreatedAt:   c.CreatedAt,
+				UpdatedAt:   comment.UpdatedAt,
+				SearchAfter: hit.Sort,
+			})
+		}
+	}
+
+	if len(comments) < 1 {
+		return comments, i.TotalData{Total: 0, Relation: "eq"}, &elastic.Error{Status: 404}
+	}
+
+	return comments, i.TotalData{Total: int(result.Hits.TotalHits.Value), Relation: result.Hits.TotalHits.Relation}, nil
 }
