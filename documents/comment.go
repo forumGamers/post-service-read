@@ -3,11 +3,13 @@ package documents
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"time"
 
 	"github.com/forumGamers/post-service-read/database"
 	h "github.com/forumGamers/post-service-read/helper"
 	i "github.com/forumGamers/post-service-read/interfaces"
+	"github.com/forumGamers/post-service-read/web"
 	"github.com/olivere/elastic/v7"
 )
 
@@ -16,7 +18,7 @@ type CommentService interface {
 	DeleteOneById(ctx context.Context, id string) error
 	CountComments(ctx context.Context, posts *[]i.PostResponse, ids ...any) error
 	BulkCreate(ctx context.Context, datas []CommentDocument) error
-	FindCommentByPostId(ctx context.Context, id string) ([]i.CommentResponse, i.TotalData, error)
+	FindCommentByPostId(ctx context.Context, id string, params web.Params) ([]i.CommentResponse, i.TotalData, error)
 }
 
 type CommentDocument struct {
@@ -85,13 +87,24 @@ func (c *CommentDocument) BulkCreate(ctx context.Context, datas []CommentDocumen
 	return nil
 }
 
-func (c *CommentDocument) FindCommentByPostId(ctx context.Context, id string) ([]i.CommentResponse, i.TotalData, error) {
-	result, err := database.DB.Search().
+func (c *CommentDocument) FindCommentByPostId(ctx context.Context, id string, params web.Params) ([]i.CommentResponse, i.TotalData, error) {
+	query := database.DB.Search().
 		Index(database.COMMENTINDEX).
 		Query(elastic.NewMatchQuery("postId", id)).
 		Sort("CreatedAt", false).
 		Sort("id", false).
-		Size(10).
+		Size(params.Limit).
+		Timeout("30s")
+
+	if len(params.Page) > 0 {
+		var sa []any
+		if timeStamp, err := strconv.ParseInt(params.Page[0], 10, 64); err == nil {
+			sa = append(sa, timeStamp, params.Page[1])
+			query.SearchAfter(sa...)
+		}
+	}
+
+	result, err := query.
 		Do(ctx)
 
 	if err != nil {
@@ -106,6 +119,7 @@ func (c *CommentDocument) FindCommentByPostId(ctx context.Context, id string) ([
 			comments = append(comments, i.CommentResponse{
 				Id:          comment.Id,
 				UserId:      comment.UserId,
+				PostId:      comment.PostId,
 				Text:        h.Decryption(comment.Text),
 				CreatedAt:   c.CreatedAt,
 				UpdatedAt:   comment.UpdatedAt,

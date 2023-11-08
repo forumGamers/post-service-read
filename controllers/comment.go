@@ -2,9 +2,12 @@ package controllers
 
 import (
 	"context"
+	"sort"
 
 	doc "github.com/forumGamers/post-service-read/documents"
 	h "github.com/forumGamers/post-service-read/helper"
+	i "github.com/forumGamers/post-service-read/interfaces"
+	v "github.com/forumGamers/post-service-read/validator"
 	"github.com/forumGamers/post-service-read/web"
 	"github.com/gin-gonic/gin"
 )
@@ -24,10 +27,40 @@ func NewCommentController(db doc.CommentService) CommentController {
 }
 
 func (com *CommentControllerImpl) FindCommentByPostId(c *gin.Context) {
-	comments, total, err := com.Document.FindCommentByPostId(context.Background(), c.Param("postId"))
+	var query web.Params
+	c.ShouldBind(&query)
+	v.ValidateCommentParams(&query)
+
+	comments, total, err := com.Document.FindCommentByPostId(context.Background(), c.Param("postId"), query)
 	if err != nil {
 		web.AbortHttp(c, h.ElasticError(err))
 		return
+	}
+
+	var ids []any
+	for _, val := range comments {
+		ids = append(ids, val.Id)
+	}
+
+	replies, err := doc.NewReply().FindCommentsReply(context.Background(), ids)
+	if err != nil {
+		web.AbortHttp(c, h.ElasticError(err))
+		return
+	}
+
+	for _, comment := range comments {
+		commentReply := make([]i.Reply, 0)
+		for _, reply := range replies {
+			if comment.Id == reply.CommentId {
+				commentReply = append(commentReply, reply)
+			}
+		}
+		if len(commentReply) > 0 {
+			sort.Slice(commentReply, func(i, j int) bool {
+				return commentReply[i].CreatedAt.After(commentReply[j].CreatedAt)
+			})
+		}
+		comment.Reply = commentReply
 	}
 
 	web.WriteResponseWithMetadata(c, web.WebResponse{

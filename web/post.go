@@ -7,3 +7,8 @@ type PostParams struct {
 	Sort       string   `form:"sort"`
 	Preference string   `form:"preference"`
 }
+
+type Params struct {
+	Page  []string `form:"page"`
+	Limit int      `form:"limit"`
+}
