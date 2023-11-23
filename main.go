@@ -6,6 +6,7 @@ import (
 	db "github.com/forumGamers/post-service-read/database"
 	"github.com/forumGamers/post-service-read/documents"
 	h "github.com/forumGamers/post-service-read/helper"
+	"github.com/forumGamers/post-service-read/pkg/like"
 	"github.com/forumGamers/post-service-read/pkg/post"
 	r "github.com/forumGamers/post-service-read/routes"
 	"github.com/joho/godotenv"
@@ -20,7 +21,7 @@ func main() {
 
 	b.BrokerConnection()
 	postService := post.NewPost()
-	likeService := documents.NewLike()
+	likeService := like.NewLike()
 	commentService := documents.NewComment()
 	replyService := documents.NewReply()
 

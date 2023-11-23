@@ -6,6 +6,7 @@ import (
 
 	doc "github.com/forumGamers/post-service-read/documents"
 	h "github.com/forumGamers/post-service-read/helper"
+	"github.com/forumGamers/post-service-read/pkg/like"
 	"github.com/forumGamers/post-service-read/pkg/post"
 	"github.com/rabbitmq/amqp091-go"
 )
@@ -54,7 +55,7 @@ func (b *ConsumerImpl) ConsumePostDelete(postService post.PostService) {
 	}
 }
 
-func (b *ConsumerImpl) ConsumeLikeCreate(likeService doc.LikeService) {
+func (b *ConsumerImpl) ConsumeLikeCreate(likeService like.LikeService) {
 	msgs, err := b.Channel.Consume(
 		NEWLIKEQUEUE,
 		"",
@@ -68,7 +69,7 @@ func (b *ConsumerImpl) ConsumeLikeCreate(likeService doc.LikeService) {
 
 	for msg := range msgs {
 		go func(msg amqp091.Delivery) {
-			var like doc.LikeDocument
+			var like like.LikeDocument
 
 			json.Unmarshal(msg.Body, &like)
 			likeService.Insert(context.Background(), like)
@@ -76,7 +77,7 @@ func (b *ConsumerImpl) ConsumeLikeCreate(likeService doc.LikeService) {
 	}
 }
 
-func (b *ConsumerImpl) ConsumeLikeDelete(likeService doc.LikeService) {
+func (b *ConsumerImpl) ConsumeLikeDelete(likeService like.LikeService) {
 	msgs, err := b.Channel.Consume(
 		DELETELIKEQUEUE,
 		"",
@@ -90,7 +91,7 @@ func (b *ConsumerImpl) ConsumeLikeDelete(likeService doc.LikeService) {
 
 	for msg := range msgs {
 		go func(msg amqp091.Delivery) {
-			var like doc.LikeDocument
+			var like like.LikeDocument
 
 			json.Unmarshal(msg.Body, &like)
 			likeService.DeleteOneById(context.Background(), like.Id)
@@ -230,7 +231,7 @@ func (b *ConsumerImpl) ConsumeBulkPost(postService post.PostService) {
 	}
 }
 
-func (b *ConsumerImpl) ConsumeBulkLike(likeService doc.LikeService) {
+func (b *ConsumerImpl) ConsumeBulkLike(likeService like.LikeService) {
 	msgs, err := b.Channel.Consume(
 		BULKLIKEQUEUE,
 		"",
@@ -244,7 +245,7 @@ func (b *ConsumerImpl) ConsumeBulkLike(likeService doc.LikeService) {
 
 	for msg := range msgs {
 		go func(msg amqp091.Delivery) {
-			var likes []doc.LikeDocument
+			var likes []like.LikeDocument
 
 			json.Unmarshal(msg.Body, &likes)
 			likeService.BulkCreate(context.Background(), likes)

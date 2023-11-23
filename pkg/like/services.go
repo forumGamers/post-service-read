@@ -1,9 +1,8 @@
-package documents
+package like
 
 import (
 	"context"
 	"sync"
-	"time"
 
 	"github.com/forumGamers/post-service-read/database"
 	h "github.com/forumGamers/post-service-read/helper"
@@ -11,34 +10,15 @@ import (
 	"github.com/olivere/elastic/v7"
 )
 
-type LikeService interface {
-	Insert(ctx context.Context, data LikeDocument) error
-	DeleteOneById(ctx context.Context, id string) error
-	CountLike(ctx context.Context, posts *[]post.PostResponse, userId string, ids ...any) error
-	BulkCreate(ctx context.Context, datas []LikeDocument) error
-}
-
-type LikeDocument struct {
-	Id        string `json:"id"`
-	UserId    string `json:"userId"`
-	PostId    string `json:"postId"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-func NewLike() LikeService {
-	return &LikeDocument{}
-}
-
-func (l *LikeDocument) Insert(ctx context.Context, data LikeDocument) error {
+func (l *BaseDocument) Insert(ctx context.Context, data LikeDocument) error {
 	return database.NewIndex(database.LIKEINDEX).InsertOne(ctx, data)
 }
 
-func (l *LikeDocument) DeleteOneById(ctx context.Context, id string) error {
+func (l *BaseDocument) DeleteOneById(ctx context.Context, id string) error {
 	return database.NewIndex(database.LIKEINDEX).DeleteOne(ctx, id)
 }
 
-func (l *LikeDocument) CountLike(ctx context.Context, posts *[]post.PostResponse, userId string, ids ...any) error {
+func (l *BaseDocument) CountLike(ctx context.Context, posts *[]post.PostResponse, userId string, ids ...any) error {
 	query := database.
 		NewIndex(database.LIKEINDEX).
 		CountDocuments("postId", "likes_per_post", ids...)
@@ -103,7 +83,7 @@ func (l *LikeDocument) CountLike(ctx context.Context, posts *[]post.PostResponse
 	return nil
 }
 
-func (l *LikeDocument) BulkCreate(ctx context.Context, datas []LikeDocument) error {
+func (l *BaseDocument) BulkCreate(ctx context.Context, datas []LikeDocument) error {
 	bulkProcessor, _ := database.DB.BulkProcessor().
 		Name("bulk_like").
 		Workers(2).

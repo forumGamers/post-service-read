@@ -7,6 +7,7 @@ import (
 
 	doc "github.com/forumGamers/post-service-read/documents"
 	h "github.com/forumGamers/post-service-read/helper"
+	"github.com/forumGamers/post-service-read/pkg/like"
 	"github.com/forumGamers/post-service-read/pkg/post"
 	v "github.com/forumGamers/post-service-read/validator"
 	"github.com/forumGamers/post-service-read/web"
@@ -74,7 +75,7 @@ func (p *PostControllerImpl) PublicContent(c *gin.Context) {
 
 	go func(posts []post.PostResponse, ids ...any) {
 		defer wg.Done()
-		errCh <- doc.NewLike().CountLike(context.Background(), &posts, uuid, ids...)
+		errCh <- like.NewLike().CountLike(context.Background(), &posts, uuid, ids...)
 	}(posts, ids...)
 
 	go func(posts []post.PostResponse, ids ...any) {

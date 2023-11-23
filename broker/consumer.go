@@ -6,6 +6,7 @@ import (
 
 	doc "github.com/forumGamers/post-service-read/documents"
 	h "github.com/forumGamers/post-service-read/helper"
+	"github.com/forumGamers/post-service-read/pkg/like"
 	"github.com/forumGamers/post-service-read/pkg/post"
 	"github.com/rabbitmq/amqp091-go"
 )
@@ -15,9 +16,9 @@ type Consumer interface {
 	ConsumePostDelete(postService post.PostService)
 	ConsumeBulkPost(postService post.PostService)
 
-	ConsumeLikeCreate(likeService doc.LikeService)
-	ConsumeLikeDelete(likeService doc.LikeService)
-	ConsumeBulkLike(likeService doc.LikeService)
+	ConsumeLikeCreate(likeService like.LikeService)
+	ConsumeLikeDelete(likeService like.LikeService)
+	ConsumeBulkLike(likeService like.LikeService)
 
 	ConsumeCommentCreate(commentService doc.CommentService)
 	ConsumeCommentDelete(commentService doc.CommentService)
@@ -86,7 +87,7 @@ func BrokerConnection() {
 	log.Println("connection to broker success")
 }
 
-func ConsumeMessage(post post.PostService, like doc.LikeService, comment doc.CommentService, replyService doc.ReplyService) {
+func ConsumeMessage(post post.PostService, like like.LikeService, comment doc.CommentService, replyService doc.ReplyService) {
 	//kirim otentikasi header
 	go Broker.ConsumePostCreate(post)
 	go Broker.ConsumePostDelete(post)
