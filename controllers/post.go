@@ -5,11 +5,11 @@ import (
 	"sync"
 	"time"
 
-	doc "github.com/forumGamers/post-service-read/documents"
 	h "github.com/forumGamers/post-service-read/helper"
 	"github.com/forumGamers/post-service-read/pkg/comment"
 	"github.com/forumGamers/post-service-read/pkg/like"
 	"github.com/forumGamers/post-service-read/pkg/post"
+	"github.com/forumGamers/post-service-read/pkg/share"
 	"github.com/forumGamers/post-service-read/pkg/user"
 	v "github.com/forumGamers/post-service-read/validator"
 	"github.com/forumGamers/post-service-read/web"
@@ -88,7 +88,7 @@ func (p *PostControllerImpl) PublicContent(c *gin.Context) {
 	go func(posts []post.PostResponse, ids ...any) {
 		defer wg.Done()
 		time.Sleep(50 * time.Millisecond) //agar ga error 429
-		errCh <- doc.NewShare().CountShares(context.Background(), &posts, uuid, ids...)
+		errCh <- share.NewShare().CountShares(context.Background(), &posts, uuid, ids...)
 	}(posts, ids...)
 
 	var errors error

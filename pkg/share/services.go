@@ -1,9 +1,8 @@
-package documents
+package share
 
 import (
 	"context"
 	"sync"
-	"time"
 
 	"github.com/forumGamers/post-service-read/database"
 	h "github.com/forumGamers/post-service-read/helper"
@@ -11,34 +10,15 @@ import (
 	"github.com/olivere/elastic/v7"
 )
 
-type ShareService interface {
-	Insert(ctx context.Context, data ShareDocument) error
-	DeleteOneById(ctx context.Context, id string) error
-	CountShares(ctx context.Context, posts *[]post.PostResponse, userId string, ids ...any) error
-}
-
-type ShareDocument struct {
-	Id        string `json:"id"`
-	UserId    string `json:"userId"`
-	PostId    string `json:"postId"`
-	Text      string `json:"text"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-func (s *ShareDocument) Insert(ctx context.Context, data ShareDocument) error {
+func (s *BaseDocument) Insert(ctx context.Context, data ShareDocument) error {
 	return database.NewIndex(database.SHAREINDEX).InsertOne(ctx, data)
 }
 
-func (s *ShareDocument) DeleteOneById(ctx context.Context, id string) error {
+func (s *BaseDocument) DeleteOneById(ctx context.Context, id string) error {
 	return database.NewIndex(database.SHAREINDEX).DeleteOne(ctx, id)
 }
 
-func NewShare() ShareService {
-	return &ShareDocument{}
-}
-
-func (s *ShareDocument) CountShares(ctx context.Context, posts *[]post.PostResponse, userId string, ids ...any) error {
+func (s *BaseDocument) CountShares(ctx context.Context, posts *[]post.PostResponse, userId string, ids ...any) error {
 	query := database.
 		NewIndex(database.SHAREINDEX).
 		CountDocuments("postId", "shares_per_post", ids...)
