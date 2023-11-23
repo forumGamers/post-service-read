@@ -10,6 +10,7 @@ import (
 	"github.com/forumGamers/post-service-read/pkg/comment"
 	"github.com/forumGamers/post-service-read/pkg/like"
 	"github.com/forumGamers/post-service-read/pkg/post"
+	"github.com/forumGamers/post-service-read/pkg/user"
 	v "github.com/forumGamers/post-service-read/validator"
 	"github.com/forumGamers/post-service-read/web"
 	"github.com/gin-gonic/gin"
@@ -70,7 +71,7 @@ func (p *PostControllerImpl) PublicContent(c *gin.Context) {
 	}
 
 	errCh := make(chan error)
-	uuid := doc.GetUser(c).UUID
+	uuid := user.GetUser(c).UUID
 	var wg sync.WaitGroup
 	wg.Add(3)
 

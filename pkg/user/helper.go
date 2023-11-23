@@ -1,14 +1,9 @@
-package documents
+package user
 
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 )
-
-type User struct {
-	UUID     string `json:"UUID"`
-	LoggedAs string `json:"loggedAs"`
-}
 
 func GetUser(c *gin.Context) User {
 	var user User
