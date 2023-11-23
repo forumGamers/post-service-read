@@ -4,9 +4,9 @@ import (
 	"context"
 	"sort"
 
-	doc "github.com/forumGamers/post-service-read/documents"
 	h "github.com/forumGamers/post-service-read/helper"
-	i "github.com/forumGamers/post-service-read/interfaces"
+	"github.com/forumGamers/post-service-read/pkg/comment"
+	"github.com/forumGamers/post-service-read/pkg/reply"
 	v "github.com/forumGamers/post-service-read/validator"
 	"github.com/forumGamers/post-service-read/web"
 	"github.com/gin-gonic/gin"
@@ -17,10 +17,10 @@ type CommentController interface {
 }
 
 type CommentControllerImpl struct {
-	Document doc.CommentService
+	Document comment.CommentService
 }
 
-func NewCommentController(db doc.CommentService) CommentController {
+func NewCommentController(db comment.CommentService) CommentController {
 	return &CommentControllerImpl{
 		Document: db,
 	}
@@ -42,14 +42,14 @@ func (com *CommentControllerImpl) FindCommentByPostId(c *gin.Context) {
 		ids = append(ids, val.Id)
 	}
 
-	replies, err := doc.NewReply().FindCommentsReply(context.Background(), ids)
+	replies, err := reply.NewReply().FindCommentsReply(context.Background(), ids)
 	if err != nil {
 		web.AbortHttp(c, h.ElasticError(err))
 		return
 	}
 
 	for _, comment := range comments {
-		commentReply := make([]i.Reply, 0)
+		commentReply := make([]reply.Reply, 0)
 		for _, reply := range replies {
 			if comment.Id == reply.CommentId {
 				commentReply = append(commentReply, reply)

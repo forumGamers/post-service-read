@@ -4,10 +4,11 @@ import (
 	"log"
 	"os"
 
-	doc "github.com/forumGamers/post-service-read/documents"
 	h "github.com/forumGamers/post-service-read/helper"
+	"github.com/forumGamers/post-service-read/pkg/comment"
 	"github.com/forumGamers/post-service-read/pkg/like"
 	"github.com/forumGamers/post-service-read/pkg/post"
+	"github.com/forumGamers/post-service-read/pkg/reply"
 	"github.com/rabbitmq/amqp091-go"
 )
 
@@ -20,12 +21,12 @@ type Consumer interface {
 	ConsumeLikeDelete(likeService like.LikeService)
 	ConsumeBulkLike(likeService like.LikeService)
 
-	ConsumeCommentCreate(commentService doc.CommentService)
-	ConsumeCommentDelete(commentService doc.CommentService)
-	ConsumeBulkComment(commentService doc.CommentService)
+	ConsumeCommentCreate(commentService comment.CommentService)
+	ConsumeCommentDelete(commentService comment.CommentService)
+	ConsumeBulkComment(commentService comment.CommentService)
 
-	ConsumeReplyCreate(replyService doc.ReplyService)
-	ConsumeReplyDelete(replyService doc.ReplyService)
+	ConsumeReplyCreate(replyService reply.ReplyService)
+	ConsumeReplyDelete(replyService reply.ReplyService)
 }
 
 type ConsumerImpl struct {
@@ -87,7 +88,7 @@ func BrokerConnection() {
 	log.Println("connection to broker success")
 }
 
-func ConsumeMessage(post post.PostService, like like.LikeService, comment doc.CommentService, replyService doc.ReplyService) {
+func ConsumeMessage(post post.PostService, like like.LikeService, comment comment.CommentService, replyService reply.ReplyService) {
 	//kirim otentikasi header
 	go Broker.ConsumePostCreate(post)
 	go Broker.ConsumePostDelete(post)

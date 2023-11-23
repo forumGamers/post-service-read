@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 
-	doc "github.com/forumGamers/post-service-read/documents"
 	h "github.com/forumGamers/post-service-read/helper"
+	"github.com/forumGamers/post-service-read/pkg/comment"
 	"github.com/forumGamers/post-service-read/pkg/like"
 	"github.com/forumGamers/post-service-read/pkg/post"
+	"github.com/forumGamers/post-service-read/pkg/reply"
 	"github.com/rabbitmq/amqp091-go"
 )
 
@@ -99,7 +100,7 @@ func (b *ConsumerImpl) ConsumeLikeDelete(likeService like.LikeService) {
 	}
 }
 
-func (b *ConsumerImpl) ConsumeCommentCreate(commentService doc.CommentService) {
+func (b *ConsumerImpl) ConsumeCommentCreate(commentService comment.CommentService) {
 	msgs, err := b.Channel.Consume(
 		NEWCOMMENTQUEUE,
 		"",
@@ -113,7 +114,7 @@ func (b *ConsumerImpl) ConsumeCommentCreate(commentService doc.CommentService) {
 
 	for msg := range msgs {
 		go func(msg amqp091.Delivery) {
-			var comment doc.CommentDocument
+			var comment comment.CommentDocument
 
 			json.Unmarshal(msg.Body, &comment)
 			commentService.Insert(context.Background(), comment)
@@ -121,7 +122,7 @@ func (b *ConsumerImpl) ConsumeCommentCreate(commentService doc.CommentService) {
 	}
 }
 
-func (b *ConsumerImpl) ConsumeCommentDelete(commentService doc.CommentService) {
+func (b *ConsumerImpl) ConsumeCommentDelete(commentService comment.CommentService) {
 	msgs, err := b.Channel.Consume(
 		DELETECOMMENTQUEUE,
 		"",
@@ -135,7 +136,7 @@ func (b *ConsumerImpl) ConsumeCommentDelete(commentService doc.CommentService) {
 
 	for msg := range msgs {
 		go func(msg amqp091.Delivery) {
-			var comment doc.CommentDocument
+			var comment comment.CommentDocument
 
 			json.Unmarshal(msg.Body, &comment)
 			commentService.DeleteOneById(context.Background(), comment.Id)
@@ -143,7 +144,7 @@ func (b *ConsumerImpl) ConsumeCommentDelete(commentService doc.CommentService) {
 	}
 }
 
-func (b *ConsumerImpl) ConsumeBulkComment(commentService doc.CommentService) {
+func (b *ConsumerImpl) ConsumeBulkComment(commentService comment.CommentService) {
 	msgs, err := b.Channel.Consume(
 		BULKCOMMENTQUEUE,
 		"",
@@ -157,7 +158,7 @@ func (b *ConsumerImpl) ConsumeBulkComment(commentService doc.CommentService) {
 
 	for msg := range msgs {
 		go func(msg amqp091.Delivery) {
-			var comments []doc.CommentDocument
+			var comments []comment.CommentDocument
 
 			json.Unmarshal(msg.Body, &comments)
 			commentService.BulkCreate(context.Background(), comments)
@@ -165,7 +166,7 @@ func (b *ConsumerImpl) ConsumeBulkComment(commentService doc.CommentService) {
 	}
 }
 
-func (b *ConsumerImpl) ConsumeReplyCreate(replyService doc.ReplyService) {
+func (b *ConsumerImpl) ConsumeReplyCreate(replyService reply.ReplyService) {
 	msgs, err := b.Channel.Consume(
 		NEWREPLYQUEUE,
 		"",
@@ -179,7 +180,7 @@ func (b *ConsumerImpl) ConsumeReplyCreate(replyService doc.ReplyService) {
 
 	for msg := range msgs {
 		go func(msg amqp091.Delivery) {
-			var comment doc.ReplyCommentDocument
+			var comment reply.Reply
 
 			json.Unmarshal(msg.Body, &comment)
 			replyService.Insert(context.Background(), comment)
@@ -187,7 +188,7 @@ func (b *ConsumerImpl) ConsumeReplyCreate(replyService doc.ReplyService) {
 	}
 }
 
-func (b *ConsumerImpl) ConsumeReplyDelete(replyService doc.ReplyService) {
+func (b *ConsumerImpl) ConsumeReplyDelete(replyService reply.ReplyService) {
 	msgs, err := b.Channel.Consume(
 		DELETEREPLYQUEUE,
 		"",
@@ -201,7 +202,7 @@ func (b *ConsumerImpl) ConsumeReplyDelete(replyService doc.ReplyService) {
 
 	for msg := range msgs {
 		go func(msg amqp091.Delivery) {
-			var comment doc.ReplyCommentDocument
+			var comment reply.Reply
 
 			json.Unmarshal(msg.Body, &comment)
 			replyService.DeleteOneById(context.Background(), comment.Id)

@@ -1,6 +1,11 @@
 package reply
 
-import "time"
+import (
+	"time"
+
+	"github.com/forumGamers/post-service-read/database"
+	"github.com/olivere/elastic/v7"
+)
 
 type Reply struct {
 	Id        string `json:"id"`
@@ -9,4 +14,14 @@ type Reply struct {
 	CommentId string `json:"commentId"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+type BaseDocument struct {
+	DB *elastic.Client
+}
+
+func NewReply() ReplyService {
+	return &BaseDocument{
+		DB: database.DB,
+	}
 }

@@ -7,6 +7,7 @@ import (
 
 	doc "github.com/forumGamers/post-service-read/documents"
 	h "github.com/forumGamers/post-service-read/helper"
+	"github.com/forumGamers/post-service-read/pkg/comment"
 	"github.com/forumGamers/post-service-read/pkg/like"
 	"github.com/forumGamers/post-service-read/pkg/post"
 	v "github.com/forumGamers/post-service-read/validator"
@@ -80,7 +81,7 @@ func (p *PostControllerImpl) PublicContent(c *gin.Context) {
 
 	go func(posts []post.PostResponse, ids ...any) {
 		defer wg.Done()
-		errCh <- doc.NewComment().CountComments(context.Background(), &posts, ids...)
+		errCh <- comment.NewComment().CountComments(context.Background(), &posts, ids...)
 	}(posts, ids...)
 
 	go func(posts []post.PostResponse, ids ...any) {

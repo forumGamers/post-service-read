@@ -4,10 +4,11 @@ import (
 	b "github.com/forumGamers/post-service-read/broker"
 	"github.com/forumGamers/post-service-read/controllers"
 	db "github.com/forumGamers/post-service-read/database"
-	"github.com/forumGamers/post-service-read/documents"
 	h "github.com/forumGamers/post-service-read/helper"
+	"github.com/forumGamers/post-service-read/pkg/comment"
 	"github.com/forumGamers/post-service-read/pkg/like"
 	"github.com/forumGamers/post-service-read/pkg/post"
+	"github.com/forumGamers/post-service-read/pkg/reply"
 	r "github.com/forumGamers/post-service-read/routes"
 	"github.com/joho/godotenv"
 )
@@ -22,8 +23,8 @@ func main() {
 	b.BrokerConnection()
 	postService := post.NewPost()
 	likeService := like.NewLike()
-	commentService := documents.NewComment()
-	replyService := documents.NewReply()
+	commentService := comment.NewComment()
+	replyService := reply.NewReply()
 
 	b.ConsumeMessage(
 		postService,
