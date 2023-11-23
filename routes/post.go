@@ -10,6 +10,7 @@ func (r routes) postRoute(rg *gin.RouterGroup, pc controllers.PostController) {
 	uri := rg.Group("/post")
 
 	uri.Use(md.Authentication)
+	uri.GET("/", pc.FindMyPost)
 	uri.GET("/public", pc.PublicContent)
 	uri.GET("/:postId", pc.FindById)
 }

@@ -7,14 +7,14 @@ import (
 
 	"github.com/forumGamers/post-service-read/database"
 	h "github.com/forumGamers/post-service-read/helper"
-	i "github.com/forumGamers/post-service-read/interfaces"
+	"github.com/forumGamers/post-service-read/pkg/post"
 	"github.com/olivere/elastic/v7"
 )
 
 type LikeService interface {
 	Insert(ctx context.Context, data LikeDocument) error
 	DeleteOneById(ctx context.Context, id string) error
-	CountLike(ctx context.Context, posts *[]i.PostResponse, userId string, ids ...any) error
+	CountLike(ctx context.Context, posts *[]post.PostResponse, userId string, ids ...any) error
 	BulkCreate(ctx context.Context, datas []LikeDocument) error
 }
 
@@ -38,7 +38,7 @@ func (l *LikeDocument) DeleteOneById(ctx context.Context, id string) error {
 	return database.NewIndex(database.LIKEINDEX).DeleteOne(ctx, id)
 }
 
-func (l *LikeDocument) CountLike(ctx context.Context, posts *[]i.PostResponse, userId string, ids ...any) error {
+func (l *LikeDocument) CountLike(ctx context.Context, posts *[]post.PostResponse, userId string, ids ...any) error {
 	query := database.
 		NewIndex(database.LIKEINDEX).
 		CountDocuments("postId", "likes_per_post", ids...)
@@ -70,7 +70,7 @@ func (l *LikeDocument) CountLike(ctx context.Context, posts *[]i.PostResponse, u
 		}
 
 		wg.Add(1)
-		go func(postsData *[]i.PostResponse) {
+		go func(postsData *[]post.PostResponse) {
 			defer wg.Done()
 			for _, bucket := range aggsLiked.Buckets {
 				for i := 0; i < len(*postsData); i++ {
@@ -88,7 +88,7 @@ func (l *LikeDocument) CountLike(ctx context.Context, posts *[]i.PostResponse, u
 	}
 
 	wg.Add(1)
-	go func(postsData *[]i.PostResponse) {
+	go func(postsData *[]post.PostResponse) {
 		defer wg.Done()
 		for _, bucket := range aggsLikePerPost.Buckets {
 			for i := 0; i < len(*postsData); i++ {

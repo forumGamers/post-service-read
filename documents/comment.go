@@ -9,6 +9,7 @@ import (
 	"github.com/forumGamers/post-service-read/database"
 	h "github.com/forumGamers/post-service-read/helper"
 	i "github.com/forumGamers/post-service-read/interfaces"
+	"github.com/forumGamers/post-service-read/pkg/post"
 	"github.com/forumGamers/post-service-read/web"
 	"github.com/olivere/elastic/v7"
 )
@@ -16,7 +17,7 @@ import (
 type CommentService interface {
 	Insert(ctx context.Context, data CommentDocument) error
 	DeleteOneById(ctx context.Context, id string) error
-	CountComments(ctx context.Context, posts *[]i.PostResponse, ids ...any) error
+	CountComments(ctx context.Context, posts *[]post.PostResponse, ids ...any) error
 	BulkCreate(ctx context.Context, datas []CommentDocument) error
 	FindCommentByPostId(ctx context.Context, id string, params web.Params) ([]i.CommentResponse, i.TotalData, error)
 }
@@ -42,7 +43,7 @@ func (c *CommentDocument) DeleteOneById(ctx context.Context, id string) error {
 	return database.NewIndex(database.COMMENTINDEX).DeleteOne(ctx, id)
 }
 
-func (c *CommentDocument) CountComments(ctx context.Context, posts *[]i.PostResponse, ids ...any) error {
+func (c *CommentDocument) CountComments(ctx context.Context, posts *[]post.PostResponse, ids ...any) error {
 	aggs, err := database.
 		NewIndex(database.COMMENTINDEX).
 		CountDocuments("postId", "comments_per_post", ids...).Do(ctx)

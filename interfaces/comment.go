@@ -12,5 +12,5 @@ type CommentResponse struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	SearchAfter []any   `json:"searchAfter"`
-	Reply       []Reply `json:"reply"`
+	Reply       []Reply `json:"Reply"`
 }

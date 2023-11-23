@@ -7,14 +7,14 @@ import (
 
 	"github.com/forumGamers/post-service-read/database"
 	h "github.com/forumGamers/post-service-read/helper"
-	i "github.com/forumGamers/post-service-read/interfaces"
+	"github.com/forumGamers/post-service-read/pkg/post"
 	"github.com/olivere/elastic/v7"
 )
 
 type ShareService interface {
 	Insert(ctx context.Context, data ShareDocument) error
 	DeleteOneById(ctx context.Context, id string) error
-	CountShares(ctx context.Context, posts *[]i.PostResponse, userId string, ids ...any) error
+	CountShares(ctx context.Context, posts *[]post.PostResponse, userId string, ids ...any) error
 }
 
 type ShareDocument struct {
@@ -38,7 +38,7 @@ func NewShare() ShareService {
 	return &ShareDocument{}
 }
 
-func (s *ShareDocument) CountShares(ctx context.Context, posts *[]i.PostResponse, userId string, ids ...any) error {
+func (s *ShareDocument) CountShares(ctx context.Context, posts *[]post.PostResponse, userId string, ids ...any) error {
 	query := database.
 		NewIndex(database.SHAREINDEX).
 		CountDocuments("postId", "shares_per_post", ids...)
@@ -50,7 +50,7 @@ func (s *ShareDocument) CountShares(ctx context.Context, posts *[]i.PostResponse
 				SubAggregation("postId", elastic.NewTermsAggregation().Field("postId")),
 		)
 	}
-
+	// 6542168defedc06c06df5745,6542168defedc06c06df5747,6542168defedc06c06df5748,6542168defedc06c06df5751,6542168defedc06c06df5754,6542168defedc06c06df5757,6542168defedc06c06df575a
 	result, err := query.Do(ctx)
 	if err != nil {
 		return err
@@ -70,7 +70,7 @@ func (s *ShareDocument) CountShares(ctx context.Context, posts *[]i.PostResponse
 		}
 
 		wg.Add(1)
-		go func(postsData *[]i.PostResponse) {
+		go func(postsData *[]post.PostResponse) {
 			defer wg.Done()
 			for _, bucket := range aggsShared.Buckets {
 				for i := 0; i < len(*postsData); i++ {
@@ -88,7 +88,7 @@ func (s *ShareDocument) CountShares(ctx context.Context, posts *[]i.PostResponse
 	}
 
 	wg.Add(1)
-	go func(postsData *[]i.PostResponse) {
+	go func(postsData *[]post.PostResponse) {
 		defer wg.Done()
 		for _, bucket := range aggsSharesPerPost.Buckets {
 			for i := 0; i < len(*postsData); i++ {

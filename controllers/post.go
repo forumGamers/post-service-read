@@ -7,7 +7,7 @@ import (
 
 	doc "github.com/forumGamers/post-service-read/documents"
 	h "github.com/forumGamers/post-service-read/helper"
-	i "github.com/forumGamers/post-service-read/interfaces"
+	"github.com/forumGamers/post-service-read/pkg/post"
 	v "github.com/forumGamers/post-service-read/validator"
 	"github.com/forumGamers/post-service-read/web"
 	"github.com/gin-gonic/gin"
@@ -16,13 +16,14 @@ import (
 type PostController interface {
 	FindById(c *gin.Context)
 	PublicContent(c *gin.Context)
+	FindMyPost(c *gin.Context)
 }
 
 type PostControllerImpl struct {
-	Document doc.PostService
+	Document post.PostService
 }
 
-func NewPostController(db doc.PostService) PostController {
+func NewPostController(db post.PostService) PostController {
 	return &PostControllerImpl{
 		Document: db,
 	}
@@ -35,7 +36,7 @@ func (p *PostControllerImpl) FindById(c *gin.Context) {
 		return
 	}
 
-	var post doc.PostDocument
+	var post post.PostDocument
 	if err := h.JsonToStruct(get, &post); err != nil {
 		web.AbortHttp(c, err)
 		return
@@ -71,17 +72,17 @@ func (p *PostControllerImpl) PublicContent(c *gin.Context) {
 	var wg sync.WaitGroup
 	wg.Add(3)
 
-	go func(posts []i.PostResponse, ids ...any) {
+	go func(posts []post.PostResponse, ids ...any) {
 		defer wg.Done()
 		errCh <- doc.NewLike().CountLike(context.Background(), &posts, uuid, ids...)
 	}(posts, ids...)
 
-	go func(posts []i.PostResponse, ids ...any) {
+	go func(posts []post.PostResponse, ids ...any) {
 		defer wg.Done()
 		errCh <- doc.NewComment().CountComments(context.Background(), &posts, ids...)
 	}(posts, ids...)
 
-	go func(posts []i.PostResponse, ids ...any) {
+	go func(posts []post.PostResponse, ids ...any) {
 		defer wg.Done()
 		time.Sleep(50 * time.Millisecond) //agar ga error 429
 		errCh <- doc.NewShare().CountShares(context.Background(), &posts, uuid, ids...)
@@ -117,4 +118,13 @@ func (p *PostControllerImpl) PublicContent(c *gin.Context) {
 		Total:    total.Total,
 		Page:     posts[len(posts)-1].SearchAfter,
 	})
+}
+
+func (p *PostControllerImpl) FindMyPost(c *gin.Context) {
+	// posts, total, err := p.Document.FindByUserId(context.Background(), doc.GetUser(c).UUID)
+	// if err != nil {
+	// 	web.AbortHttp(c, h.ElasticError(err))
+	// 	return
+	// }
+
 }

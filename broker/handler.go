@@ -6,10 +6,11 @@ import (
 
 	doc "github.com/forumGamers/post-service-read/documents"
 	h "github.com/forumGamers/post-service-read/helper"
+	"github.com/forumGamers/post-service-read/pkg/post"
 	"github.com/rabbitmq/amqp091-go"
 )
 
-func (b *ConsumerImpl) ConsumePostCreate(postService doc.PostService) {
+func (b *ConsumerImpl) ConsumePostCreate(postService post.PostService) {
 	msgs, err := b.Channel.Consume(
 		NEWPOSTQUEUE,
 		"",
@@ -23,7 +24,7 @@ func (b *ConsumerImpl) ConsumePostCreate(postService doc.PostService) {
 
 	for msg := range msgs {
 		go func(msg amqp091.Delivery) {
-			var post doc.PostDocument
+			var post post.PostDocument
 
 			json.Unmarshal(msg.Body, &post)
 			postService.Insert(context.Background(), post)
@@ -31,7 +32,7 @@ func (b *ConsumerImpl) ConsumePostCreate(postService doc.PostService) {
 	}
 }
 
-func (b *ConsumerImpl) ConsumePostDelete(postService doc.PostService) {
+func (b *ConsumerImpl) ConsumePostDelete(postService post.PostService) {
 	msgs, err := b.Channel.Consume(
 		DELETEPOSTQUEUE,
 		"",
@@ -45,7 +46,7 @@ func (b *ConsumerImpl) ConsumePostDelete(postService doc.PostService) {
 
 	for msg := range msgs {
 		go func(msg amqp091.Delivery) {
-			var post doc.PostDocument
+			var post post.PostDocument
 
 			json.Unmarshal(msg.Body, &post)
 			postService.DeleteOneById(context.Background(), post.Id)
@@ -207,7 +208,7 @@ func (b *ConsumerImpl) ConsumeReplyDelete(replyService doc.ReplyService) {
 	}
 }
 
-func (b *ConsumerImpl) ConsumeBulkPost(postService doc.PostService) {
+func (b *ConsumerImpl) ConsumeBulkPost(postService post.PostService) {
 	msgs, err := b.Channel.Consume(
 		BULKPOSTQUEUE,
 		"",
@@ -221,7 +222,7 @@ func (b *ConsumerImpl) ConsumeBulkPost(postService doc.PostService) {
 
 	for msg := range msgs {
 		go func(msg amqp091.Delivery) {
-			var posts []doc.PostDocument
+			var posts []post.PostDocument
 
 			json.Unmarshal(msg.Body, &posts)
 			postService.BulkCreate(context.Background(), posts)
