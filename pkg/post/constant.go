@@ -14,5 +14,5 @@ type PostService interface {
 	DeleteOneById(ctx context.Context, id string) error
 	GetPublicContent(ctx context.Context, query web.PostParams) ([]PostResponse, i.TotalData, error)
 	BulkCreate(ctx context.Context, datas []PostDocument) error
-	FindByUserId(ctx context.Context, id string) ([]PostResponse, i.TotalData, error)
+	FindByUserId(ctx context.Context, id string, query web.PostParams) ([]PostResponse, i.TotalData, error)
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/forumGamers/post-service-read/pkg/comment"
 	"github.com/forumGamers/post-service-read/pkg/like"
 	"github.com/forumGamers/post-service-read/pkg/post"
+	"github.com/forumGamers/post-service-read/pkg/reply"
 	"github.com/forumGamers/post-service-read/pkg/share"
 	"github.com/forumGamers/post-service-read/pkg/user"
 	v "github.com/forumGamers/post-service-read/validator"
@@ -23,12 +24,26 @@ type PostController interface {
 }
 
 type PostControllerImpl struct {
-	Document post.PostService
+	Document   post.PostService
+	LikeDoc    like.LikeService
+	CommentDoc comment.CommentService
+	ReplyDoc   reply.ReplyService
+	ShareDoc   share.ShareService
 }
 
-func NewPostController(db post.PostService) PostController {
+func NewPostController(
+	db post.PostService,
+	like like.LikeService,
+	comment comment.CommentService,
+	reply reply.ReplyService,
+	share share.ShareService,
+) PostController {
 	return &PostControllerImpl{
-		Document: db,
+		Document:   db,
+		LikeDoc:    like,
+		CommentDoc: comment,
+		ReplyDoc:   reply,
+		ShareDoc:   share,
 	}
 }
 
@@ -77,38 +92,30 @@ func (p *PostControllerImpl) PublicContent(c *gin.Context) {
 
 	go func(posts []post.PostResponse, ids ...any) {
 		defer wg.Done()
-		errCh <- like.NewLike().CountLike(context.Background(), &posts, uuid, ids...)
+		errCh <- p.LikeDoc.CountLike(context.Background(), &posts, uuid, ids...)
 	}(posts, ids...)
 
 	go func(posts []post.PostResponse, ids ...any) {
 		defer wg.Done()
-		errCh <- comment.NewComment().CountComments(context.Background(), &posts, ids...)
+		errCh <- p.CommentDoc.CountComments(context.Background(), &posts, ids...)
 	}(posts, ids...)
 
 	go func(posts []post.PostResponse, ids ...any) {
 		defer wg.Done()
 		time.Sleep(50 * time.Millisecond) //agar ga error 429
-		errCh <- share.NewShare().CountShares(context.Background(), &posts, uuid, ids...)
+		errCh <- p.ShareDoc.CountShares(context.Background(), &posts, uuid, ids...)
 	}(posts, ids...)
 
-	var errors error
-	flag := false
-	for i := 0; i < 3; i++ {
-		select {
-		case err := <-errCh:
-			{
-				if err != nil && !flag {
-					flag = true
-					errors = err
-				}
-			}
-		}
-	}
+	go func() {
+		wg.Wait()
+		close(errCh)
+	}()
 
-	wg.Wait()
-	if flag {
-		web.AbortHttp(c, h.ElasticError(errors))
-		return
+	for err := range errCh {
+		if err != nil {
+			web.AbortHttp(c, h.ElasticError(err))
+			return
+		}
 	}
 
 	web.WriteResponseWithMetadata(c, web.WebResponse{
@@ -124,10 +131,62 @@ func (p *PostControllerImpl) PublicContent(c *gin.Context) {
 }
 
 func (p *PostControllerImpl) FindMyPost(c *gin.Context) {
-	// posts, total, err := p.Document.FindByUserId(context.Background(), doc.GetUser(c).UUID)
-	// if err != nil {
-	// 	web.AbortHttp(c, h.ElasticError(err))
-	// 	return
-	// }
+	var query web.PostParams
+	c.ShouldBindQuery(&query)
+	v.ValidatePostQuery(&query)
+	uuid := user.GetUser(c).UUID
 
+	posts, total, err := p.Document.FindByUserId(context.Background(), uuid, query)
+	if err != nil {
+		web.AbortHttp(c, h.ElasticError(err))
+		return
+	}
+
+	var ids []any
+	for _, post := range posts {
+		ids = append(ids, post.Id)
+	}
+
+	errCh := make(chan error)
+	var wg sync.WaitGroup
+	wg.Add(3)
+
+	go func(posts []post.PostResponse, ids ...any) {
+		defer wg.Done()
+		errCh <- p.LikeDoc.CountLike(context.Background(), &posts, uuid, ids...)
+	}(posts, ids...)
+
+	go func(posts []post.PostResponse, ids ...any) {
+		defer wg.Done()
+		errCh <- p.CommentDoc.CountComments(context.Background(), &posts, ids...)
+	}(posts, ids...)
+
+	go func(posts []post.PostResponse, ids ...any) {
+		defer wg.Done()
+		time.Sleep(50 * time.Millisecond) //agar ga error 429
+		errCh <- p.ShareDoc.CountShares(context.Background(), &posts, uuid, ids...)
+	}(posts, ids...)
+
+	go func() {
+		wg.Wait()
+		close(errCh)
+	}()
+
+	for err := range errCh {
+		if err != nil {
+			web.AbortHttp(c, h.ElasticError(err))
+			return
+		}
+	}
+
+	web.WriteResponseWithMetadata(c, web.WebResponse{
+		Code:    200,
+		Message: "OK",
+		Data:    posts,
+	}, web.MetaData{
+		Limit:    query.Limit,
+		Relation: total.Relation,
+		Total:    total.Total,
+		Page:     posts[len(posts)-1].SearchAfter,
+	})
 }

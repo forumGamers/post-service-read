@@ -9,6 +9,7 @@ import (
 	"github.com/forumGamers/post-service-read/pkg/like"
 	"github.com/forumGamers/post-service-read/pkg/post"
 	"github.com/forumGamers/post-service-read/pkg/reply"
+	"github.com/forumGamers/post-service-read/pkg/share"
 	r "github.com/forumGamers/post-service-read/routes"
 	"github.com/joho/godotenv"
 )
@@ -25,6 +26,7 @@ func main() {
 	likeService := like.NewLike()
 	commentService := comment.NewComment()
 	replyService := reply.NewReply()
+	shareService := share.NewShare()
 
 	b.ConsumeMessage(
 		postService,
@@ -34,7 +36,7 @@ func main() {
 	)
 
 	r.NewRoutes(
-		controllers.NewPostController(postService),
+		controllers.NewPostController(postService, likeService, commentService, replyService, shareService),
 		controllers.NewCommentController(commentService),
 	)
 }

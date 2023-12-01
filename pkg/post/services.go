@@ -61,7 +61,7 @@ func (p *BaseDocument) GetPublicContent(ctx context.Context, query web.PostParam
 	}
 	search.Timeout("30s")
 
-	result, err := search.Do(context.Background())
+	result, err := search.Do(ctx)
 	if err != nil {
 		return nil, struct {
 			Total    int
@@ -103,8 +103,8 @@ func (p *BaseDocument) BulkCreate(ctx context.Context, datas []PostDocument) err
 	return nil
 }
 
-func (p *BaseDocument) FindByUserId(ctx context.Context, id string) ([]PostResponse, i.TotalData, error) {
-	result, err := p.DB.Search().
+func (p *BaseDocument) FindByUserId(ctx context.Context, id string, query web.PostParams) ([]PostResponse, i.TotalData, error) {
+	search := p.DB.Search().
 		Index(database.POSTINDEX).
 		Query(
 			elastic.NewBoolQuery().
@@ -113,7 +113,17 @@ func (p *BaseDocument) FindByUserId(ctx context.Context, id string) ([]PostRespo
 		Size(10).
 		Sort("CreatedAt", false).
 		Sort("id", false).
-		Do(ctx)
+		Timeout("30s")
+
+	if len(query.Page) > 0 || query.Page != nil {
+		var sa []any
+		if timeStamp, err := strconv.ParseInt(query.Page[0], 10, 64); err == nil {
+			sa = append(sa, timeStamp, query.Page[1])
+			search.SearchAfter(sa...)
+		}
+	}
+
+	result, err := search.Do(ctx)
 	if err != nil {
 		return nil, struct {
 			Total    int
